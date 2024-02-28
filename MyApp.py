@@ -27,6 +27,39 @@ import math
 import json
 import tempfile
 import calendar
+import requests
+import subprocess
+
+def check_for_updates(current_version):
+    # Запрос на сервер для получения последней версии приложения
+    latest_version = requests.get('https://raw.githubusercontent.com/lawBorzzz/work/main/version.txt').text.strip()
+
+    # Сравнение текущей версии с последней версией
+    if latest_version != current_version:
+        print("Доступна новая версия:", latest_version)
+        return latest_version
+    else:
+        print("У вас последняя версия приложения.")
+        return None
+
+def update_application():
+    # Загрузка и установка новой версии приложения
+    subprocess.run(['pip', 'install', 'your_application_package'])
+
+def main():
+    current_version = "1.1.0"  # Текущая версия вашего приложения
+    latest_version = check_for_updates(current_version)
+
+    if latest_version:
+        update_application()
+        print("Приложение успешно обновлено до версии", latest_version)
+
+    # Запуск вашего приложения
+    # YOUR_APPLICATION_START_COMMAND
+
+if __name__ == "__main__":
+    main()
+
 
 #пробуем внести изменения 1
 class App(tk.Tk):
