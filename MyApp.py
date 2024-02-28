@@ -54,14 +54,6 @@ def main():
         update_application()
         print("Приложение успешно обновлено до версии", latest_version)
 
-    # Запуск вашего приложения
-    # YOUR_APPLICATION_START_COMMAND
-
-if __name__ == "__main__":
-    main()
-
-
-#пробуем внести изменения 1
 class App(tk.Tk):
     BASE_COST = 89.5  # базовая стоимость бандероли
     STEP_COST = 3.5   # стоимость за шаг в 20 грамм
