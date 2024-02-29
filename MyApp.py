@@ -29,30 +29,30 @@ import tempfile
 import calendar
 import requests
 import subprocess
+import webbrowser
 
 def check_for_updates(current_version):
-    # Запрос на сервер для получения последней версии приложения
-    latest_version = requests.get('https://raw.githubusercontent.com/lawBorzzz/work/main/version.txt').text.strip()
+    try:
+        response = requests.get('https://raw.githubusercontent.com/lawBorzzz/work/main/version.txt')
+        response.raise_for_status()
+        latest_version = response.text.strip()
+        print("Получена версия из GitHub:", latest_version)
+    except requests.exceptions.RequestException as e:
+        print("Ошибка при проверке обновлений:", e)
+        return
 
-    # Сравнение текущей версии с последней версией
     if latest_version != current_version:
         print("Доступна новая версия:", latest_version)
-        return latest_version
+        # Открываем диалоговое окно с предложением обновления
+        root = tk.Tk()
+        root.withdraw()  # Скрыть основное окно
+        response = messagebox.askquestion("Доступна новая версия", "Желаете обновить?")
+        if response == 'yes':
+            # Перенаправляем пользователя на страницу загрузки
+            webbrowser.open('https://github.com/lawBorzzz/work/releases')
+        root.destroy()
     else:
         print("У вас последняя версия приложения.")
-        return None
-
-def update_application():
-    # Загрузка и установка новой версии приложения
-    subprocess.run(['pip', 'install', 'your_application_package'])
-
-def main():
-    current_version = "1.1.0"  # Текущая версия вашего приложения
-    latest_version = check_for_updates(current_version)
-
-    if latest_version:
-        update_application()
-        print("Приложение успешно обновлено до версии", latest_version)
 
 class App(tk.Tk):
     BASE_COST = 89.5  # базовая стоимость бандероли
@@ -60,6 +60,7 @@ class App(tk.Tk):
     LETTER_COST = 29.0  # стоимость письма простого
     REGISTERED_LETTER_COST = 67.0 # стоимость письма заказного
     NDS = 1.2 # НДС 20%
+
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1627,8 +1628,11 @@ class App(tk.Tk):
 
 
 
-
-
-if __name__ == "__main__":
+def main():
+    current_version = "1.0.0"  # Текущая версия вашего приложения
+    check_for_updates(current_version)
     app = App()
     app.mainloop()
+
+if __name__ == "__main__":
+    main()
