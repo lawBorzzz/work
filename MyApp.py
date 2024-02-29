@@ -1629,7 +1629,7 @@ class App(tk.Tk):
 
 
 def main():
-    current_version = "1.0.0"  # Текущая версия вашего приложения
+    current_version = "4.0.0"  # Текущая версия вашего приложения
     check_for_updates(current_version)
     app = App()
     app.mainloop()
