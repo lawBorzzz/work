@@ -238,7 +238,6 @@ class App(tk.Tk):
         self.packet_entry.focus_set()
 
     def finish_weight_calculation(self):
-        self.packet_window.destroy()
         self.open_date_window()
 
 # Расчет стоимости бандеролей, идет по настройкам с выставленными значениями.
@@ -286,6 +285,10 @@ class App(tk.Tk):
 
 # Сохранение результата списка бандеролей с датой
     def save_results(self, event=None):
+        if not self.weights:
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            return
+    
         selected_date = self.cal.get_date()
         try:
             current_date = datetime.strptime(selected_date, "%d.%m.%Y").date()
@@ -301,6 +304,7 @@ class App(tk.Tk):
         
             messagebox.showinfo("Успешно", "Результаты сохранены.")
             self.date_window.destroy()
+            self.packet_window.destroy()
         
             self.weights.clear()
             self.total_weight = 0
@@ -461,6 +465,10 @@ class App(tk.Tk):
 
 # Сохраняем результат
     def save_foreign_date(self):
+        if not self.prices_entered:
+            messagebox.showerror("Ошибка", "Список введенных цен пуст.")
+            return
+    
         selected_date = self.calendar.get_date()
         self.save_to_foreign_file(selected_date)
         self.calendar_window.destroy()
@@ -589,7 +597,7 @@ class App(tk.Tk):
         selected_date = self.cal.get_date()
         selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
         if not selected_date or not self.numbers_entered_reg:
-            tk.messagebox.showwarning("Ошибка", "Введите все данные корректно!")
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
             return
 
         # Подсчет итога
@@ -723,7 +731,7 @@ class App(tk.Tk):
         selected_date = self.cal.get_date()
         selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
         if not selected_date or not self.numbers_entered:
-            tk.messagebox.showwarning("Ошибка", "Введите все данные корректно!")
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
             return
 
         try:
@@ -848,31 +856,31 @@ class App(tk.Tk):
         self.save_button.pack(pady=10)
 
     def calculate_and_save_parcels(self):
-        try:
-            selected_date = self.cal.get_date()
-            selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
-            current_date = datetime.strptime(selected_date, "%d.%m.%Y").date()
+        if not self.parcels_weights_listbox.size():
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            return
+        
+        selected_date = self.cal.get_date()
+        selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
+        current_date = datetime.strptime(selected_date, "%d.%m.%Y").date()
 
-            total_parcels = self.parcels_weights_listbox.size()
-            total_cost = sum(float(self.parcels_weights_listbox.get(i).split()[0]) for i in range(total_parcels))
-            total_cost_with_vat = total_cost * self.NDS  # Учет НДС (20%)
+        total_parcels = self.parcels_weights_listbox.size()
+        total_cost = sum(float(self.parcels_weights_listbox.get(i).split()[0]) for i in range(total_parcels))
+        total_cost_with_vat = total_cost * self.NDS  # Учет НДС (20%)
 
-            result_string = (
-                f"Итого за {current_date.strftime('%d.%m.%Y')} отправлено посылок: {total_parcels}  на общую сумму "
-                f"{total_cost:.2f} руб. (без НДС) и {total_cost_with_vat:.2f} руб. (с НДС).\n"
-            )
+        result_string = (
+            f"Итого за {current_date.strftime('%d.%m.%Y')} отправлено посылок: {total_parcels}  на общую сумму "
+            f"{total_cost:.2f} руб. (без НДС) и {total_cost_with_vat:.2f} руб. (с НДС).\n"
+        )
 
-            custom_path = self.custom_path
-            filename = os.path.join(custom_path, f"Списки посылок.txt")
+        custom_path = self.custom_path
+        filename = os.path.join(custom_path, f"Списки посылок.txt")
 
-            with open(filename, "a", encoding='utf-8') as file:
-                file.write(result_string)
+        with open(filename, "a", encoding='utf-8') as file:
+            file.write(result_string)
 
-            messagebox.showinfo("Успешно", "Результаты сохранены.")
-            self.parcels_window.destroy()
-
-        except ValueError:
-            messagebox.showerror("Ошибка", "Введите дату в правильном формате (дд.мм.гггг).")
+        messagebox.showinfo("Успешно", "Результаты сохранены.")
+        self.parcels_window.destroy()
 
 # Функция для создания диалогового окна по общему подсчету и ввода даты
     def ask_month_input(self):
@@ -1567,7 +1575,7 @@ class App(tk.Tk):
         )
         self.save_settings_button.pack(pady=10)
 
-        by_label = tk.Label(self.settings_window, text="by.Borzzz", fg="gray")
+        by_label = tk.Label(self.settings_window, text="Версия 4.0.1", fg="black")
         by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
 
 # Окно выбора пути сохранения
@@ -1629,7 +1637,7 @@ class App(tk.Tk):
 
 
 def main():
-    current_version = "4.0.0"  # Текущая версия вашего приложения
+    current_version = "4.0.1"  # Текущая версия вашего приложения
     check_for_updates(current_version)
     app = App()
     app.mainloop()
