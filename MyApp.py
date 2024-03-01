@@ -1,35 +1,29 @@
-import tkinter as tk
-from tkinter import Tk, Button
-from collections import defaultdict
-from tkinter import messagebox
-from tkinter import PhotoImage
-from datetime import date, datetime
-from tkinter.filedialog import askdirectory
-from docx import Document as DocxDocument
-from docx.enum.section import WD_ORIENTATION
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Inches
-from docx.shared import Pt
-from docx.shared import Inches
-from docx.shared import Cm
-from docx.shared import Pt
-from tkinter import simpledialog
-from docx.shared import RGBColor
-from tkcalendar import Calendar
-from tkcalendar import DateEntry
-from PIL import ImageTk, Image
-
-import os
-import io
-import re
-import math
-import json
-import tempfile
 import calendar
+import io
+import json
+import math
+import os
+import re
 import requests
 import subprocess
+import tempfile
 import webbrowser
+import tkinter as tk
+
+from collections import defaultdict
+from datetime import date, datetime
+from tkinter import Tk, Button, messagebox, simpledialog
+from tkinter.filedialog import askdirectory
+from tkinter import PhotoImage
+from tkinter import simpledialog
+from tkinter import font
+from PIL import Image, ImageTk
+from tkcalendar import Calendar, DateEntry
+from docx import Document as DocxDocument
+from docx.enum.section import WD_ORIENTATION
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Cm, Pt, RGBColor
+
 
 def check_for_updates(current_version):
     try:
@@ -60,6 +54,7 @@ class App(tk.Tk):
     LETTER_COST = 29.0  # стоимость письма простого
     REGISTERED_LETTER_COST = 67.0 # стоимость письма заказного
     NDS = 1.2 # НДС 20%
+
 
     
     def __init__(self, *args, **kwargs):
@@ -132,10 +127,6 @@ class App(tk.Tk):
             button.pack(pady=10)
             button.configure(borderwidth=2, relief=tk.GROOVE, bg='lightgrey')
 
-        # Надпись "by.Borzzz" в нижнем правом углу
-        by_label = tk.Label(self, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.RIGHT, padx=10, pady=10)
-
         # Создаем кнопку настроек с изображением
         settings_image = Image.open(settings_image_path)
         settings_image_tk = ImageTk.PhotoImage(settings_image)
@@ -175,9 +166,6 @@ class App(tk.Tk):
         self.packet_entry = tk.Entry(self.packet_window)
         self.packet_entry.pack(pady=10, padx=20)
         self.packet_entry.focus_set()
-
-        by_label = tk.Label(self.packet_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
 
         # Создание Listbox для отображения введенных весов
         self.packets_listbox_label = tk.Label(self.packet_window, text="Список введённых значений:")
@@ -357,10 +345,6 @@ class App(tk.Tk):
         self.foreign_button.configure(borderwidth=2, relief=tk.GROOVE)
         self.foreign_button.configure(bg='lightgrey')
 
-        # Надпись "by.Borzzz" в нижнем правом углу
-        self.by_label = tk.Label(self.letters_window, text="by.Borzzz", fg="gray")
-        self.by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
-
         self.letters_window.focus_set()
 
 # Открывается подсчет иностранных писем
@@ -413,9 +397,6 @@ class App(tk.Tk):
         )
         self.finish_button.pack(pady=5, padx=20, fill=tk.X)
         self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-        by_label = tk.Label(self.foreign_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
 
 # добавляем в листбокс
     def add_to_foreign_list(self, event=None):
@@ -534,11 +515,6 @@ class App(tk.Tk):
                                         command=self.open_calendar_reg, bg='lightgrey')
         self.finish_button.pack(pady=5, padx=20, fill=tk.X)
         self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
-    
-        # Надпись "by.Borzzz" в нижнем правом углу
-        by_label = tk.Label(self.registered_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
-
 
     def open_calendar_reg(self):
         # Создание календаря
@@ -669,9 +645,6 @@ class App(tk.Tk):
                                         command=self.open_simple_calendar, bg='lightgrey')
         self.finish_button.pack(pady=5, padx=20, fill=tk.X)
         self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-        by_label = tk.Label(self.simple_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
 
     def open_simple_calendar(self):
         # Создание календаря
@@ -805,10 +778,6 @@ class App(tk.Tk):
 
         self.parcels_price_entry.bind("<Return>", self.add_parcel_weight)
 
-        by_label = tk.Label(self.parcels_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
-
-
     def add_parcel_weight(self, event=None):
         try:
             # Получаем значение из виджета Entry и заменяем запятую на точку
@@ -914,10 +883,6 @@ class App(tk.Tk):
         self.ok_button.pack(pady=10)
 
         self.month_window.geometry(f"400x320+{x_coordinate}+{y_coordinate}")
-
-        by_label = tk.Label(self.month_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
-
 
     def get_selected_month(self):
         selected_date_str = self.month_calendar.get_date()
@@ -1099,11 +1064,6 @@ class App(tk.Tk):
         self.invoices_button.pack(pady=(10, 0),)  # Устанавливаем отступ снизу для второй кнопки
         self.invoices_button.configure(borderwidth=2, relief=tk.GROOVE)
         self.invoices_button.configure(bg='lightgrey')
-
-        # Надпись "by.Borzzz" в нижнем правом углу
-        by_label = tk.Label(self.cover_window, text="by.Borzzz", fg="gray")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
-
 
 # Обложка на почту
     def open_post(self):
@@ -1496,6 +1456,8 @@ class App(tk.Tk):
         self.settings_window.geometry("400x710")
         self.settings_window.attributes('-topmost', 'true')
 
+        self.developer_email = "law.borzzz@gmail.com"
+
         # Создаем метку с изображением в качестве фона
         background_label = tk.Label(self.settings_window, image=self.bg_image_tk)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
@@ -1575,8 +1537,57 @@ class App(tk.Tk):
         )
         self.save_settings_button.pack(pady=10)
 
-        by_label = tk.Label(self.settings_window, text="Версия 4.0.1", fg="black")
-        by_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
+        # Добавляем метку "О разработчике"
+        self.developer_label = tk.Label(self.settings_window, text="О программе", fg="blue", cursor="hand2")
+        self.developer_label.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
+        self.developer_label.bind("<Button-1>", lambda event: self.open_program_info())
+
+    def open_program_info(self):
+        program_info_window = tk.Toplevel(self)
+        program_info_window.title("Информация о программе")
+        program_info_window.geometry("350x250+{}+{}".format(
+            (self.winfo_screenwidth() - 350) // 2,
+            (self.winfo_screenheight() - 250) // 2
+        ))
+        
+        # Создаем метку с отступом сверху
+        top_spacing = tk.Label(program_info_window, text="", font=("Helvetica", 2))
+        top_spacing.pack()
+
+        # Создаем метку с заголовком отчета почты
+        report_label = tk.Label(program_info_window, text="Формирование отчёта", font=("Calibri", 16, "bold"))
+        report_label.pack(pady=(10, 5))
+
+        # Версия программы
+        version_label = tk.Label(program_info_window, text="Версия: 4.0.1", font=("Calibri", 12))
+        version_label.pack(pady=5)
+
+        # Информация о разработчиках
+        developer_label = tk.Label(program_info_window, text="Главный разработчик: Борзиков Д.А.", font=("Calibri", 10), anchor="w")
+        developer_label.pack(anchor="w", padx=10)
+
+        leader_label = tk.Label(program_info_window, text="Руководитель: Усова Н.Н.", font=("Calibri", 10), anchor="w")
+        leader_label.pack(anchor="w", padx=10)
+
+        tester_label = tk.Label(program_info_window, text="Тестировщик: Паринов М.И.", font=("Calibri", 10), anchor="w")
+        tester_label.pack(anchor="w", padx=10)
+
+        # Для связи (адрес электронной почты)
+        contact_label = tk.Label(program_info_window, text="Почта для связи", font=("Calibri", 10, "bold"), cursor="hand2", fg="blue")
+        contact_label.pack(pady=5)
+
+        # Привязываем событие щелчка мыши к метке с адресом электронной почты
+        contact_label.bind("<Button-1>", lambda event: self.copy_email_to_clipboard())
+
+        # Дополнительные сведения
+        additional_info_label = tk.Label(program_info_window, text="Нажмите, чтобы скопировать.", font=("Calibri", 8, "italic"), fg="gray")
+        additional_info_label.pack(pady=5)
+
+    def copy_email_to_clipboard(self):
+        self.clipboard_clear()  # Очищаем буфер обмена
+        self.clipboard_append(self.developer_email)  # Копируем адрес электронной почты
+        messagebox.showinfo("Скопировано", "Адрес электронной почты скопирован.")
+
 
 # Окно выбора пути сохранения
     def select_custom_path(self):
