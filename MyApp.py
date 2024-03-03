@@ -200,13 +200,13 @@ class App(tk.Tk):
             weight_str = self.packet_entry.get().strip()
             if not weight_str:
                 raise ValueError("Введите корректное числовое значение.")
-            weight = float(weight_str)
-
-            if weight < 120 or weight > 2000:
-                raise ValueError("Введите валидный вес (от 120 до 2000).")
             
             if not re.match(r'^\d*\.?\d*$', weight_str):
                 raise ValueError("Введите только цифры!")
+            
+            weight = float(weight_str)
+            if weight < 120 or weight > 2000:
+                raise ValueError("Введите валидный вес (от 120 до 2000).")
         
             # Округляем вес
             rounded_weight = self.round_weight(weight)
