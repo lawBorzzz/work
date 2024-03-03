@@ -59,7 +59,7 @@ class App(tk.Tk):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.title("Отчет по почте")
+        self.title("Формирование отчета")
 
         # Получить путь к исполняемому файлу
         executable_path = os.path.dirname(os.path.abspath(__file__))
@@ -142,7 +142,7 @@ class App(tk.Tk):
     def open_packet_window(self):
         
         self.packet_window = tk.Toplevel(self)
-        self.packet_window.title("Подсчет веса бандеролей")
+        self.packet_window.title("Подсчет бандеролей")
         self.packet_window.geometry("300x700")
 
         # Создаем метку с изображением в качестве фона
@@ -168,7 +168,7 @@ class App(tk.Tk):
         self.packet_entry.focus_set()
 
         # Создание Listbox для отображения введенных весов
-        self.packets_listbox_label = tk.Label(self.packet_window, text="Список введённых значений:")
+        self.packets_listbox_label = tk.Label(self.packet_window, text="Список введённых бандеролей:")
         self.packets_listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
         self.packets_listbox = tk.Listbox(self.packet_window)
         self.packets_listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
@@ -206,7 +206,7 @@ class App(tk.Tk):
             self.packets_listbox.insert(tk.END, f"{rounded_weight} грамм")
             self.packet_entry.delete(0, tk.END)
         except ValueError as e:
-            messagebox.showerror("Ошибка", str(e))
+            messagebox.showerror("Ошибка", "Введите числовое значение веса.")
         finally:
             self.packet_entry.focus_set()
 
@@ -221,7 +221,7 @@ class App(tk.Tk):
             self.packets_listbox.delete(index)  # Удалить элемент из listbox
             self.total_parcels -= 1
         else:
-            messagebox.showinfo("Информация", "Выберите вес, который нужно удалить.")
+            messagebox.showinfo("Предупреждение", "Выберите значение для удаления.")
         # Фокусировка после изменения
         self.packet_entry.focus_set()
 
@@ -243,7 +243,7 @@ class App(tk.Tk):
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
        
         window_width = 300
-        window_height = 300
+        window_height = 280
 
         # Получаем размеры экрана
         screen_width = self.date_window.winfo_screenwidth()
@@ -267,9 +267,9 @@ class App(tk.Tk):
 
         # Кнопка для сохранения результатов
         self.save_button = tk.Button(
-            self.date_window, text="Сформировать список", command=save_results
-        )
-        self.save_button.pack(pady=10)
+        self.date_window, text="Сформировать список", command=save_results, bg='lightgray')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
 
 # Сохранение результата списка бандеролей с датой
     def save_results(self, event=None):
@@ -400,11 +400,23 @@ class App(tk.Tk):
 
 # добавляем в листбокс
     def add_to_foreign_list(self, event=None):
-        price = self.price_entry.get()
-        if price:
-            self.prices_entered.append(price)
-            self.listbox.insert(tk.END, f"{price} руб.")
+        try:
+            price = self.price_entry.get().replace(',', '.')  # Заменяем запятую на точку
+            if not price:
+                raise ValueError("Пожалуйста, введите цену.")
+            
+            # Проверяем, что ввод содержит только цифры и точку
+            if not re.match(r'^\d*\.?\d*$', price):
+                raise ValueError("Введите корректное числовое значение.")
+
+            prices = float(price)
+            self.prices_entered.append(prices)
+            self.listbox.insert(tk.END, f"{prices} руб.")
             self.price_entry.delete(0, tk.END)
+        except ValueError as e:
+            messagebox.showerror("Ошибка", str(e))
+        finally:
+            self.price_entry.focus_set()
 
 # Удаляем из листбокс
     def remove_foreign_selected(self):
@@ -413,6 +425,8 @@ class App(tk.Tk):
             selected_index = selected_indices[0]
             self.listbox.delete(selected_index)
             del self.prices_entered[selected_index]
+        else:
+            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
 
 # Открываем календарь
     def open_foreign_calendar(self):
@@ -424,7 +438,7 @@ class App(tk.Tk):
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         window_width = 300
-        window_height = 300
+        window_height = 280
 
         screen_width = self.calendar_window.winfo_screenwidth()
         screen_height = self.calendar_window.winfo_screenheight()
@@ -441,8 +455,9 @@ class App(tk.Tk):
         self.calendar.pack(padx=20, pady=20)
 
         # Кнопка "Сохранить дату"
-        save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.save_foreign_date)
-        save_button.pack(pady=10)
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.save_foreign_date, bg='lightgray')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
 
 # Сохраняем результат
     def save_foreign_date(self):
@@ -499,7 +514,7 @@ class App(tk.Tk):
         self.quantity_entry.focus_set()
 
         # Список введенных значений
-        self.listbox_label = tk.Label(self.registered_window, text="Список введенных цен:")
+        self.listbox_label = tk.Label(self.registered_window, text="Список введенных писем:")
         self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
         self.listbox = tk.Listbox(self.registered_window)
         self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
@@ -520,7 +535,7 @@ class App(tk.Tk):
         # Создание календаря
         self.calendar_window = tk.Toplevel(self.registered_window)
         self.calendar_window.title("Выберите дату")
-        self.calendar_window.geometry("300x300")
+        self.calendar_window.geometry("300x280")
 
         # Создаем метку с изображением в качестве фона
         background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
@@ -531,19 +546,20 @@ class App(tk.Tk):
 
         # Рассчитываем координаты для центрирования окна
         x_coordinate = (screen_width - 300) // 2
-        y_coordinate = (screen_height - 300) // 2
+        y_coordinate = (screen_height - 280) // 2
 
         # Устанавливаем положение окна по центру
-        self.calendar_window.geometry(f"300x300+{x_coordinate}+{y_coordinate}")
+        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
 
         self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year, month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
         self.cal.pack(pady=10)
 
         # Кнопка для сохранения результатов
-        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_result_reg)
-        self.save_button.pack(pady=10)
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_result_reg, bg='lightgray')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
 
-# Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
+# Добавление значений в листбокс   
     def add_to_list_reg(self, event):
         # Попытка преобразовать введенные данные в число и добавление в список
         try:
@@ -563,7 +579,7 @@ class App(tk.Tk):
             self.numbers_entered_reg.pop(index)
             self.listbox.delete(index)
         except IndexError:
-            tk.messagebox.showwarning("Ошибка", "Выберите элемент для удаления")
+            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
         except Exception as e:
             tk.messagebox.showwarning("Ошибка", f"Произошла ошибка: {e}")
         
@@ -629,7 +645,7 @@ class App(tk.Tk):
         self.quantity_entry.focus_set()
 
         # Список введенных значений
-        self.listbox_label = tk.Label(self.simple_window, text="Список введённых значений:")
+        self.listbox_label = tk.Label(self.simple_window, text="Список введённых писем:")
         self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
         self.listbox = tk.Listbox(self.simple_window)
         self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
@@ -650,7 +666,7 @@ class App(tk.Tk):
         # Создание календаря
         self.calendar_window = tk.Toplevel(self.simple_window)
         self.calendar_window.title("Выберите дату")
-        self.calendar_window.geometry("300x300")
+        self.calendar_window.geometry("300x280")
 
         # Создаем метку с изображением в качестве фона
         background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
@@ -661,18 +677,20 @@ class App(tk.Tk):
 
         # Рассчитываем координаты для центрирования окна
         x_coordinate = (screen_width - 300) // 2
-        y_coordinate = (screen_height - 300) // 2
+        y_coordinate = (screen_height - 280) // 2
 
         # Устанавливаем положение окна по центру
-        self.calendar_window.geometry(f"300x300+{x_coordinate}+{y_coordinate}")
+        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
 
         self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year,
                             month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
         self.cal.pack(pady=10)
 
         # Кнопка для сохранения результатов
-        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_simple_result)
-        self.save_button.pack(pady=10)
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_simple_result, bg='lightgrey')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
+        
 
 # Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
     def add_to_simple_list(self, event):
@@ -694,7 +712,7 @@ class App(tk.Tk):
             self.numbers_entered.pop(index)
             self.listbox.delete(index)
         except IndexError:
-            tk.messagebox.showwarning("Ошибка", "Выберите элемент для удаления")
+            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
         except Exception as e:
             tk.messagebox.showwarning("Ошибка", f"Произошла ошибка: {e}")
 
@@ -747,14 +765,14 @@ class App(tk.Tk):
         # Устанавливаем положение окна по центру
         self.parcels_window.geometry(f"300x700+{x_coordinate}+{y_coordinate}")
 
-        self.parcels_price_label = tk.Label(self.parcels_window, text="Введите цену посылки без НДС и нажмите Enter:")
+        self.parcels_price_label = tk.Label(self.parcels_window, text="Введите цену посылки без НДС:")
         self.parcels_price_label.pack(pady=10)
 
         self.parcels_price_entry = tk.Entry(self.parcels_window)
         self.parcels_price_entry.pack(pady=10)
         self.parcels_price_entry.focus_set()
 
-        self.parcels_listbox_label = tk.Label(self.parcels_window, text="Список введённых значений:")
+        self.parcels_listbox_label = tk.Label(self.parcels_window, text="Список введённых цен:")
         self.parcels_listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
 
         # Добавим Frame для отступов вокруг Listbox
@@ -795,12 +813,14 @@ class App(tk.Tk):
         selected_index = self.parcels_weights_listbox.curselection()
         if selected_index:
             self.parcels_weights_listbox.delete(selected_index)
+        else:
+            messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
 
     def open_calendar_parcels(self):
         # Создание календаря
         self.calendar_window = tk.Toplevel(self.parcels_window)
         self.calendar_window.title("Выберите дату")
-        self.calendar_window.geometry("300x300")
+        self.calendar_window.geometry("300x280")
 
         # Создаем метку с изображением в качестве фона
         background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
@@ -811,18 +831,19 @@ class App(tk.Tk):
 
         # Рассчитываем координаты для центрирования окна
         x_coordinate = (screen_width - 300) // 2
-        y_coordinate = (screen_height - 300) // 2
+        y_coordinate = (screen_height - 280) // 2
 
         # Устанавливаем положение окна по центру
-        self.calendar_window.geometry(f"300x300+{x_coordinate}+{y_coordinate}")
+        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
 
         self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year, 
                             month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
         self.cal.pack(pady=10)
 
         # Кнопка для сохранения результатов
-        self.save_button = tk.Button(self.calendar_window, text="Сохранить", command=self.calculate_and_save_parcels)
-        self.save_button.pack(pady=10)
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_parcels, bg='lightgray')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
 
     def calculate_and_save_parcels(self):
         if not self.parcels_weights_listbox.size():
@@ -987,7 +1008,7 @@ class App(tk.Tk):
 
             # Строка результата расчета
             result_string = (f"Итого за {selected_month}:\n"
-                             f"Отправлено бандеролей: {total_parcels} ,"
+                             f"Отправлено бандеролей: {total_parcels} "
                              f"весом {total_weight} грамм на сумму {total_cost} руб.\n"
                              f"Отправлено простых писем: {total_simple_letters} на сумму {total_letters_cost} руб.\n"
                              f"Отправлено заказных писем: {total_registered_letters} на сумму {total_registered_letters_cost} руб.\n"
@@ -1069,7 +1090,10 @@ class App(tk.Tk):
     def open_post(self):
         # Создаем окно
         top = tk.Toplevel(self)
+        top.title("Выбор даты")
         
+        background_label = tk.Label(top, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Получаем размеры экрана
         screen_width = self.winfo_screenwidth()
@@ -1094,8 +1118,9 @@ class App(tk.Tk):
         cal.pack(padx=10, pady=10)
 
         # Кнопка для выбора даты
-        btn_ok = tk.Button(top, text="Выбрать", command=get_date)
-        btn_ok.pack(pady=5)
+        btn_ok = tk.Button(top, text="Сформировать обложку", command=get_date, bg='lightgray')
+        btn_ok.pack(pady=10, padx=20, fill=tk.X)
+        btn_ok.configure(borderwidth=2, relief=tk.GROOVE)
 
     def create_document(self, selected_date):
         # Создаем документ Word с выбранной датой
@@ -1134,6 +1159,10 @@ class App(tk.Tk):
     def open_pacage(self):
         # Создаем окно
         top = tk.Toplevel(self)
+        top.title("Выбор даты")
+        
+        background_label = tk.Label(top, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Получаем размеры экрана
         screen_width = self.winfo_screenwidth()
@@ -1158,8 +1187,9 @@ class App(tk.Tk):
         cal.pack(padx=10, pady=10)
 
         # Кнопка для выбора даты
-        btn_ok = tk.Button(top, text="Выбрать", command=get_date)
-        btn_ok.pack(pady=5)
+        btn_ok = tk.Button(top, text="Сформировать обложку", command=get_date, bg='lightgray')
+        btn_ok.pack(pady=10, padx=20, fill=tk.X)
+        btn_ok.configure(borderwidth=2, relief=tk.GROOVE)
 
     def create_document_2(self, selected_date):
         # Создаем документ Word с выбранной датой
@@ -1235,6 +1265,10 @@ class App(tk.Tk):
     def open_documents(self):
         # Создаем окно
         top = tk.Toplevel(self)
+        top.title("Выбор периода")
+        
+        background_label = tk.Label(top, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Получаем размеры экрана
         screen_width = top.winfo_screenwidth()
@@ -1259,8 +1293,9 @@ class App(tk.Tk):
         cal.pack(padx=10, pady=10)
 
         # Кнопка для выбора даты
-        btn_ok = tk.Button(top, text="Выбрать", command=get_date)
-        btn_ok.pack(pady=5)
+        btn_ok = tk.Button(top, text="Сформировать обложку", command=get_date, bg='lightgray')
+        btn_ok.pack(pady=10, padx=20, fill=tk.X)
+        btn_ok.configure(borderwidth=2, relief=tk.GROOVE)
 
     def create_document_3(self, selected_date):
         # Определяем первый и последний рабочий день в выбранном месяце
@@ -1308,6 +1343,10 @@ class App(tk.Tk):
     def open_complaints(self):
         # Создаем окно
         top = tk.Toplevel(self)
+        top.title("Выбор периода")
+        
+        background_label = tk.Label(top, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Получаем размеры экрана
         screen_width = self.winfo_screenwidth()
@@ -1332,8 +1371,9 @@ class App(tk.Tk):
         cal.pack(padx=10, pady=10)
 
         # Кнопка для выбора даты
-        btn_ok = tk.Button(top, text="Выбрать", command=get_date)
-        btn_ok.pack(pady=5)
+        btn_ok = tk.Button(top, text="Сформировать обложку", command=get_date, bg='lightgray')
+        btn_ok.pack(pady=10, padx=20, fill=tk.X)
+        btn_ok.configure(borderwidth=2, relief=tk.GROOVE)
 
     def create_document_4(self, selected_date):
         # Определяем первый и последний рабочий день в выбранном месяце
@@ -1380,6 +1420,10 @@ class App(tk.Tk):
     def open_invoice(self):
         # Создаем окно
         top = tk.Toplevel(self)
+        top.title("Выбор периода")
+        
+        background_label = tk.Label(top, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Получаем размеры экрана
         screen_width = self.winfo_screenwidth()
@@ -1404,8 +1448,9 @@ class App(tk.Tk):
         cal.pack(padx=10, pady=10)
 
         # Кнопка для выбора даты
-        btn_ok = tk.Button(top, text="Выбрать", command=get_date)
-        btn_ok.pack(pady=5)
+        btn_ok = tk.Button(top, text="Сформировать обложку", command=get_date, bg='lightgray')
+        btn_ok.pack(pady=10, padx=20, fill=tk.X)
+        btn_ok.configure(borderwidth=2, relief=tk.GROOVE)
 
     def create_document_5(self, selected_date):
         # Определяем первый и последний рабочий день в выбранном месяце
@@ -1559,7 +1604,7 @@ class App(tk.Tk):
         report_label.pack(pady=(10, 5))
 
         # Версия программы
-        version_label = tk.Label(program_info_window, text="Версия: 4.0.1", font=("Calibri", 12))
+        version_label = tk.Label(program_info_window, text="Версия: 4.0.2", font=("Calibri", 12))
         version_label.pack(pady=5)
 
         # Информация о разработчиках
@@ -1648,7 +1693,7 @@ class App(tk.Tk):
 
 
 def main():
-    current_version = "4.0.1"  # Текущая версия вашего приложения
+    current_version = "4.0.2"  # Текущая версия вашего приложения
     check_for_updates(current_version)
     app = App()
     app.mainloop()
