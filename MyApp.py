@@ -199,10 +199,15 @@ class App(tk.Tk):
         try:
             weight_str = self.packet_entry.get().strip()
             if not weight_str:
-                raise ValueError("Введите числовое значение веса.")
+                raise ValueError("Введите корректное числовое значение.")
             weight = float(weight_str)
+
             if weight < 120 or weight > 2000:
                 raise ValueError("Введите валидный вес (от 120 до 2000).")
+            
+            if not re.match(r'^\d*\.?\d*$', weight_str):
+                raise ValueError("Введите только цифры!")
+        
             # Округляем вес
             rounded_weight = self.round_weight(weight)
             self.weights.append(rounded_weight)  # Добавляем округленный вес
