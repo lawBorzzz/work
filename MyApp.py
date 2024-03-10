@@ -217,7 +217,7 @@ class App(tk.Tk):
             self.packets_listbox.insert(tk.END, f"{rounded_weight} грамм")
             self.packet_entry.delete(0, tk.END)
         except ValueError as e:
-            messagebox.showwarning("Ошибка", str(e))
+            messagebox.showwarning("Внимание", str(e))
         finally:
             self.packet_entry.focus_set()
 
@@ -232,7 +232,7 @@ class App(tk.Tk):
             self.packets_listbox.delete(index)  # Удалить элемент из listbox
             self.total_parcels -= 1
         else:
-            messagebox.showwarning("Ошибка", "Выберите значение для удаления.")
+            messagebox.showwarning("Внимание", "Выберите значение для удаления.")
         # Фокусировка после изменения
         self.packet_entry.focus_set()
 
@@ -293,28 +293,25 @@ class App(tk.Tk):
             return
     
         selected_date = self.cal.get_date()
-        try:
-            current_date = datetime.strptime(selected_date, "%d.%m.%Y").date()
-            
-            result_string = (f"Итого за {current_date.strftime('%d.%m.%Y')} отправлено {self.total_parcels}"
-                 f" {'бандероль' if self.total_parcels % 10 == 1 and self.total_parcels % 100 != 11 else 'бандероли' if 2 <= self.total_parcels % 10 <= 4 and (self.total_parcels % 100 < 10 or self.total_parcels % 100 >= 20) else 'бандеролей'} весом {self.total_weight:.2f} грамм на сумму {self.total_cost:.2f} руб.\n")
-            
-            custom_path = self.custom_path
-            filename = os.path.join(custom_path, f"Списки бандеролей.txt")
+        current_date = datetime.strptime(selected_date, "%d.%m.%Y").date()
+        
+        result_string = (f"Итого за {current_date.strftime('%d.%m.%Y')} отправлено {self.total_parcels}"
+             f" {'бандероль' if self.total_parcels % 10 == 1 and self.total_parcels % 100 != 11 else 'бандероли' if 2 <= self.total_parcels % 10 <= 4 and (self.total_parcels % 100 < 10 or self.total_parcels % 100 >= 20) else 'бандеролей'} весом {self.total_weight:.2f} грамм на сумму {self.total_cost:.2f} руб.\n")
+        
+        custom_path = self.custom_path
+        filename = os.path.join(custom_path, f"Списки бандеролей.txt")
 
-            with open(filename, "a", encoding='utf-8') as file:
-                file.write(result_string)
-        
-            messagebox.showinfo("Успешно", "Результаты сохранены.")
-            self.date_window.destroy()
-            self.packet_window.destroy()
-        
-            self.weights.clear()
-            self.total_weight = 0
-            self.total_cost = 0.0
-            self.total_parcels = 0
-        except ValueError:
-            messagebox.showerror("Ошибка", "Введите дату в правильном формате (дд.мм.гггг).")
+        with open(filename, "a", encoding='utf-8') as file:
+            file.write(result_string)
+    
+        messagebox.showinfo("Успешно", "Результаты сохранены.")
+        self.date_window.destroy()
+        self.packet_window.destroy()
+    
+        self.weights.clear()
+        self.total_weight = 0
+        self.total_cost = 0.0
+        self.total_parcels = 0
 
 # Окно выбора типа письма.
     def open_letters_window(self):
@@ -365,6 +362,298 @@ class App(tk.Tk):
         self.foreign_button.configure(bg='lightgrey')
 
         self.letters_window.focus_set()
+
+# Отыкрывается кнопка ПРОСТЫХ писем  
+    def calculate_simple_letters(self):
+        if hasattr(self, 'simple_window') and self.simple_window.winfo_exists():
+            self.simple_window.focus_set()
+            return
+   
+        self.simple_window = tk.Toplevel()
+        self.simple_window.title("Подсчет простых писем")
+        self.simple_window.geometry("300x700")
+
+        # Создаем метку с изображением в качестве фона
+        background_label = tk.Label(self.simple_window, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        screen_width = self.simple_window.winfo_screenwidth()
+        screen_height = self.simple_window.winfo_screenheight()
+
+        # Рассчитываем координаты для центрирования окна
+        x_coordinate = (screen_width - 300) // 2 - 500
+        y_coordinate = (screen_height - 700) // 2
+
+        # Устанавливаем положение окна по центру
+        self.simple_window.geometry(f"300x700+{x_coordinate}+{y_coordinate}")
+
+        self.numbers_entered = []  # Список для хранения введенных значений
+
+        # Ввод количества писем
+        self.quantity_label = tk.Label(self.simple_window, text="Введите количество писем:")
+        self.quantity_label.pack(pady=(20, 5))
+
+        self.quantity_entry = tk.Entry(self.simple_window)
+        self.quantity_entry.pack(pady=5)
+        self.quantity_entry.bind("<Return>", self.add_to_simple_list)  # Привязка к кнопке Enter
+        self.quantity_entry.focus_set()
+
+        # Список введенных значений
+        self.listbox_label = tk.Label(self.simple_window, text="Список введённых писем:")
+        self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
+        self.listbox = tk.Listbox(self.simple_window)
+        self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+
+        # Кнопка "удалить выбранное" для удаления конкретного введенного результата
+        self.delete_selected_button = tk.Button(self.simple_window, text="Удалить выбранное",
+                                                 command=self.remove_simple_selected, bg='lightgrey')
+        self.delete_selected_button.pack(pady=5, padx=20, fill=tk.X)
+        self.delete_selected_button.configure(borderwidth=2, relief=tk.GROOVE)
+
+        # Кнопка "Закончить подсчет" для открытия календаря
+        self.finish_button = tk.Button(self.simple_window, text="Завершить подсчет",
+                                        command=self.open_simple_calendar, bg='lightgrey')
+        self.finish_button.pack(pady=5, padx=20, fill=tk.X)
+        self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
+
+# Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
+    def add_to_simple_list(self, event):
+        # Попытка преобразовать введенные данные в число и добавление в список
+        try:
+            num_letters = int(self.quantity_entry.get())
+            if num_letters <= 0:
+                messagebox.showwarning("Внимание", "Введите корректное число!")
+                self.quantity_entry.focus_set()
+                return
+            self.numbers_entered.append(num_letters)  # Добавление числа в список
+            self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
+            self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
+        except ValueError:
+            messagebox.showwarning("Внимание", "Список введенных значений пуст.")
+            self.quantity_entry.focus_set()
+
+# Если нажали кнопку удалить последний результат из списка писем.
+    def remove_simple_selected(self):
+        try:
+            # Получить индекс выбранного элемента
+            index = self.listbox.curselection()[0]
+            # Удалить этот элемент из Listbox и из списка numbers_entered
+            self.numbers_entered.pop(index)
+            self.listbox.delete(index)
+        except IndexError:
+            messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.quantity_entry.focus_set()
+        except Exception as e:
+            messagebox.showwarning("Внимание", f"Произошла ошибка: {e}")
+            self.quantity_entry.focus_set()
+
+# Создание календаря с выбором даты
+    def open_simple_calendar(self):
+        if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
+            self.calendar_window.focus_set()
+            return
+        # Создание календаря
+        self.calendar_window = tk.Toplevel(self.simple_window)
+        self.calendar_window.title("Выберите дату")
+        self.calendar_window.geometry("300x280")
+
+        # Создаем метку с изображением в качестве фона
+        background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        screen_width = self.calendar_window.winfo_screenwidth()
+        screen_height = self.calendar_window.winfo_screenheight()
+
+        # Рассчитываем координаты для центрирования окна
+        x_coordinate = (screen_width - 300) // 2
+        y_coordinate = (screen_height - 280) // 2
+
+        # Устанавливаем положение окна по центру
+        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
+
+        self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year,
+                            month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
+        self.cal.pack(pady=10)
+
+        # Кнопка для сохранения результатов
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_simple_result, bg='lightgrey')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
+
+# Подсчет и сохранение итога по письмам
+    def calculate_and_save_simple_result(self, event=None):
+        # Ввод даты и подсчет итога
+        selected_date = self.cal.get_date()
+        selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
+        if not selected_date or not self.numbers_entered:
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.quantity_entry.focus_set()
+            return
+
+        try:
+            total = sum(self.numbers_entered) * self.LETTER_COST
+            self.save_to_simple_file(total, sum(self.numbers_entered), selected_date)
+
+            messagebox.showinfo("Успешно", "Результаты сохранены.")
+            
+            # Закрываем окно
+            self.simple_window.destroy()
+            self.letters_window.focus_set()
+        except ValueError:
+            messagebox.showerror("Ошибка", "Ошибка при сохранении результатов.")
+
+    def save_to_simple_file(self, total_result, total_letters, date):
+        custom_path = self.custom_path
+        filename = os.path.join(custom_path, f"Списки простых писем.txt")
+
+        # Используем режим 'a' для добавления данных в конец файла
+        with open(filename, 'a', encoding='utf-8') as file:
+            file.write(f"Дата: {date} Количество писем: {total_letters} Итого: {total_result} руб.\n")
+
+# Отыкрывается кнопка ЗАКАЗНЫХ писем  
+    def calculate_registered_letters(self):
+        if hasattr(self, 'registered_window') and self.registered_window.winfo_exists():
+            self.registered_window.focus_set()
+            return
+
+        self.registered_window = tk.Toplevel()
+        self.registered_window.title("Подсчет заказных писем")
+        self.registered_window.geometry("300x700")
+
+        # Создаем метку с изображением в качестве фона
+        background_label = tk.Label(self.registered_window, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        screen_width = self.registered_window.winfo_screenwidth()
+        screen_height = self.registered_window.winfo_screenheight()
+
+        # Рассчитываем координаты для центрирования окна
+        x_coordinate = (screen_width - 300) // 2 - 500
+        y_coordinate = (screen_height - 700) // 2
+
+        # Устанавливаем положение окна по центру
+        self.registered_window.geometry(f"300x700+{x_coordinate}+{y_coordinate}")
+
+        self.numbers_entered_reg = []  # Список для хранения введенных значений
+
+        # Ввод количества писем
+        self.quantity_label = tk.Label(self.registered_window, text="Введите количество писем:")
+        self.quantity_label.pack(pady=(20, 5))
+
+        self.quantity_entry = tk.Entry(self.registered_window)
+        self.quantity_entry.pack(pady=5)
+        self.quantity_entry.bind("<Return>", self.add_to_list_reg)  # Привязка к кнопке Enter
+        self.quantity_entry.focus_set()
+
+        # Список введенных значений
+        self.listbox_label = tk.Label(self.registered_window, text="Список введенных писем:")
+        self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
+        self.listbox = tk.Listbox(self.registered_window)
+        self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+
+        # Кнопка "удалить выбранное" для удаления конкретного введенного результата
+        self.delete_selected_button_reg = tk.Button(self.registered_window, text="Удалить выбранное",
+                                                     command=self.remove_selected_reg, bg='lightgrey')
+        self.delete_selected_button_reg.pack(pady=5, padx=20, fill=tk.X)
+        self.delete_selected_button_reg.configure(borderwidth=2, relief=tk.GROOVE)
+
+        # Кнопка "Закончить подсчет" для открытия календаря
+        self.finish_button = tk.Button(self.registered_window, text="Завершить подсчет",
+                                        command=self.open_calendar_reg, bg='lightgrey')
+        self.finish_button.pack(pady=5, padx=20, fill=tk.X)
+        self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
+
+# Добавление значений в листбокс   
+    def add_to_list_reg(self, event):
+        # Попытка преобразовать введенные данные в число и добавление в список
+        try:
+            num_letters = int(self.quantity_entry.get())
+            if num_letters <= 0:
+                messagebox.showwarning("Внимание", "Введите корректное число!")
+                self.quantity_entry.focus_set()
+                return
+            self.numbers_entered_reg.append(num_letters)  # Добавление числа в список
+            self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
+            self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
+        except ValueError:
+            messagebox.showwarning("Внимание", "Список введенных значений пуст.")
+            self.quantity_entry.focus_set()
+
+# Если нажали кнопку удалить последний результат из списка писем.
+    def remove_selected_reg(self):
+        try:
+            # Получить индекс выбранного элемента
+            index = self.listbox.curselection()[0]
+            # Удалить этот элемент из Listbox и из списка numbers_entered
+            self.numbers_entered_reg.pop(index)
+            self.listbox.delete(index)
+        except IndexError:
+            messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.quantity_entry.focus_set()
+        except Exception as e:
+            messagebox.showwarning("Внимание", f"Произошла ошибка: {e}")
+            self.quantity_entry.focus_set()
+
+# Создание календаря
+    def open_calendar_reg(self):
+        if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
+            self.calendar_window.focus_set()
+            return
+        # Создание календаря
+        self.calendar_window = tk.Toplevel(self.registered_window)
+        self.calendar_window.title("Выберите дату")
+        self.calendar_window.geometry("300x280")
+
+        # Создаем метку с изображением в качестве фона
+        background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        screen_width = self.calendar_window.winfo_screenwidth()
+        screen_height = self.calendar_window.winfo_screenheight()
+
+        # Рассчитываем координаты для центрирования окна
+        x_coordinate = (screen_width - 300) // 2
+        y_coordinate = (screen_height - 280) // 2
+
+        # Устанавливаем положение окна по центру
+        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
+
+        self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year, month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
+        self.cal.pack(pady=10)
+
+        # Кнопка для сохранения результатов
+        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_result_reg, bg='lightgray')
+        self.save_button.pack(pady=10, padx=20, fill=tk.X)
+        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
+        
+# Подсчет и сохранение итога по письмам
+    def calculate_and_save_result_reg(self, event=None):
+        # Ввод даты и подсчет итогаa
+        selected_date = self.cal.get_date()
+        selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
+        if not selected_date or not self.numbers_entered_reg:
+            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.quantity_entry.focus_set()
+            return
+
+        # Подсчет итога
+        total = sum(self.numbers_entered_reg) * self.REGISTERED_LETTER_COST
+        self.save_to_file_reg(total, sum(self.numbers_entered_reg), selected_date)
+
+        # Отображение результата
+        messagebox.showinfo("Успешно", "Результаты сохранены.")
+    
+        # Закрытие окна ввода
+        self.registered_window.destroy()
+        self.letters_window.focus_set()
+
+    def save_to_file_reg(self, total_result, total_registered_letters, date):
+        custom_path = self.custom_path
+        filename = os.path.join(custom_path, f"Списки заказных писем.txt")
+
+        # Используем режим 'a' для добавления данных в конец файла
+        with open(filename, 'a', encoding='utf-8') as file:
+            file.write(f"Дата: {date} Количество писем: {total_registered_letters} Итого: {total_result} руб.\n")
 
 # Открывается подсчет иностранных писем
     def calculate_foreign_letters(self):
@@ -444,7 +733,7 @@ class App(tk.Tk):
             self.listbox.insert(tk.END, f"{price_float} руб.")
             self.price_entry.delete(0, tk.END)
         except ValueError as e:
-            messagebox.showerror("Ошибка", "Введите корректное число!")
+            messagebox.showwarning("Внимание", str(e))
         finally:
             self.price_entry.focus_set()
 
@@ -456,7 +745,7 @@ class App(tk.Tk):
             self.listbox.delete(selected_index)
             del self.prices_entered[selected_index]
         else:
-            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
+            messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.price_entry.focus_set()
 
 # Открываем календарь
@@ -500,7 +789,6 @@ class App(tk.Tk):
             self.price_entry.focus_set()
             return
         
-    
         selected_date = self.calendar.get_date()
         self.save_to_foreign_file(selected_date)
         self.calendar_window.destroy()
@@ -516,299 +804,6 @@ class App(tk.Tk):
         with open(filename, "a", encoding='utf-8') as file:
             for price in self.prices_entered:
                 file.write(f"За {date}: 1 письмо, ценой: {price} руб.\n")
-
-# Отыкрывается кнопка ЗАКАЗНЫХ писем  
-    def calculate_registered_letters(self):
-        if hasattr(self, 'registered_window') and self.registered_window.winfo_exists():
-            self.registered_window.focus_set()
-            return
-
-        self.registered_window = tk.Toplevel()
-        self.registered_window.title("Подсчет заказных писем")
-        self.registered_window.geometry("300x700")
-
-        # Создаем метку с изображением в качестве фона
-        background_label = tk.Label(self.registered_window, image=self.bg_image_tk)
-        background_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        screen_width = self.registered_window.winfo_screenwidth()
-        screen_height = self.registered_window.winfo_screenheight()
-
-        # Рассчитываем координаты для центрирования окна
-        x_coordinate = (screen_width - 300) // 2 - 500
-        y_coordinate = (screen_height - 700) // 2
-
-        # Устанавливаем положение окна по центру
-        self.registered_window.geometry(f"300x700+{x_coordinate}+{y_coordinate}")
-
-        self.numbers_entered_reg = []  # Список для хранения введенных значений
-
-        # Ввод количества писем
-        self.quantity_label = tk.Label(self.registered_window, text="Введите количество писем:")
-        self.quantity_label.pack(pady=(20, 5))
-
-        self.quantity_entry = tk.Entry(self.registered_window)
-        self.quantity_entry.pack(pady=5)
-        self.quantity_entry.bind("<Return>", self.add_to_list_reg)  # Привязка к кнопке Enter
-        self.quantity_entry.focus_set()
-
-        # Список введенных значений
-        self.listbox_label = tk.Label(self.registered_window, text="Список введенных писем:")
-        self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
-        self.listbox = tk.Listbox(self.registered_window)
-        self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
-
-        # Кнопка "удалить выбранное" для удаления конкретного введенного результата
-        self.delete_selected_button_reg = tk.Button(self.registered_window, text="Удалить выбранное",
-                                                     command=self.remove_selected_reg, bg='lightgrey')
-        self.delete_selected_button_reg.pack(pady=5, padx=20, fill=tk.X)
-        self.delete_selected_button_reg.configure(borderwidth=2, relief=tk.GROOVE)
-
-        # Кнопка "Закончить подсчет" для открытия календаря
-        self.finish_button = tk.Button(self.registered_window, text="Завершить подсчет",
-                                        command=self.open_calendar_reg, bg='lightgrey')
-        self.finish_button.pack(pady=5, padx=20, fill=tk.X)
-        self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-# Добавление значений в листбокс   
-    def add_to_list_reg(self, event):
-        # Попытка преобразовать введенные данные в число и добавление в список
-        try:
-            num_letters = int(self.quantity_entry.get())
-            if num_letters <= 0:
-                messagebox.showerror("Ошибка", "Введите корректное число!")
-                self.quantity_entry.focus_set()
-                return
-            self.numbers_entered_reg.append(num_letters)  # Добавление числа в список
-            self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
-            self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
-        except ValueError:
-            tk.messagebox.showerror("Ошибка", "Список введенных значений пуст.")
-            self.quantity_entry.focus_set()
-
-# Если нажали кнопку удалить последний результат из списка писем.
-    def remove_selected_reg(self):
-        try:
-            # Получить индекс выбранного элемента
-            index = self.listbox.curselection()[0]
-            # Удалить этот элемент из Listbox и из списка numbers_entered
-            self.numbers_entered_reg.pop(index)
-            self.listbox.delete(index)
-        except IndexError:
-            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
-            self.quantity_entry.focus_set()
-        except Exception as e:
-            tk.messagebox.showwarning("Ошибка", f"Произошла ошибка: {e}")
-            self.quantity_entry.focus_set()
-
-# Создание календаря
-    def open_calendar_reg(self):
-        if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
-            self.calendar_window.focus_set()
-            return
-        # Создание календаря
-        self.calendar_window = tk.Toplevel(self.registered_window)
-        self.calendar_window.title("Выберите дату")
-        self.calendar_window.geometry("300x280")
-
-        # Создаем метку с изображением в качестве фона
-        background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
-        background_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        screen_width = self.calendar_window.winfo_screenwidth()
-        screen_height = self.calendar_window.winfo_screenheight()
-
-        # Рассчитываем координаты для центрирования окна
-        x_coordinate = (screen_width - 300) // 2
-        y_coordinate = (screen_height - 280) // 2
-
-        # Устанавливаем положение окна по центру
-        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
-
-        self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year, month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
-        self.cal.pack(pady=10)
-
-        # Кнопка для сохранения результатов
-        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_result_reg, bg='lightgray')
-        self.save_button.pack(pady=10, padx=20, fill=tk.X)
-        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
-        
-# Подсчет и сохранение итога по письмам
-    def calculate_and_save_result_reg(self, event=None):
-        # Ввод даты и подсчет итогаa
-        selected_date = self.cal.get_date()
-        selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
-        if not selected_date or not self.numbers_entered_reg:
-            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
-            self.quantity_entry.focus_set()
-            return
-
-        # Подсчет итога
-        total = sum(self.numbers_entered_reg) * self.REGISTERED_LETTER_COST
-        self.save_to_file_reg(total, sum(self.numbers_entered_reg), selected_date)
-
-        # Отображение результата
-        tk.messagebox.showinfo("Успешно", "Результаты сохранены.")
-    
-        # Закрытие окна ввода
-        self.registered_window.destroy()
-        self.letters_window.focus_set()
-
-    def save_to_file_reg(self, total_result, total_registered_letters, date):
-        custom_path = self.custom_path
-        filename = os.path.join(custom_path, f"Списки заказных писем.txt")
-
-        # Используем режим 'a' для добавления данных в конец файла
-        with open(filename, 'a', encoding='utf-8') as file:
-            file.write(f"Дата: {date} Количество писем: {total_registered_letters} Итого: {total_result} руб.\n")
-
-
-# Отыкрывается кнопка ПРОСТЫХ писем  
-    def calculate_simple_letters(self):
-        if hasattr(self, 'simple_window') and self.simple_window.winfo_exists():
-            self.simple_window.focus_set()
-            return
-   
-        self.simple_window = tk.Toplevel()
-        self.simple_window.title("Подсчет простых писем")
-        self.simple_window.geometry("300x700")
-
-        # Создаем метку с изображением в качестве фона
-        background_label = tk.Label(self.simple_window, image=self.bg_image_tk)
-        background_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        screen_width = self.simple_window.winfo_screenwidth()
-        screen_height = self.simple_window.winfo_screenheight()
-
-        # Рассчитываем координаты для центрирования окна
-        x_coordinate = (screen_width - 300) // 2 - 500
-        y_coordinate = (screen_height - 700) // 2
-
-        # Устанавливаем положение окна по центру
-        self.simple_window.geometry(f"300x700+{x_coordinate}+{y_coordinate}")
-
-        self.numbers_entered = []  # Список для хранения введенных значений
-
-        # Ввод количества писем
-        self.quantity_label = tk.Label(self.simple_window, text="Введите количество писем:")
-        self.quantity_label.pack(pady=(20, 5))
-
-        self.quantity_entry = tk.Entry(self.simple_window)
-        self.quantity_entry.pack(pady=5)
-        self.quantity_entry.bind("<Return>", self.add_to_simple_list)  # Привязка к кнопке Enter
-        self.quantity_entry.focus_set()
-
-        # Список введенных значений
-        self.listbox_label = tk.Label(self.simple_window, text="Список введённых писем:")
-        self.listbox_label.pack(pady=(20, 5), padx=10, anchor=tk.W)
-        self.listbox = tk.Listbox(self.simple_window)
-        self.listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
-
-        # Кнопка "удалить выбранное" для удаления конкретного введенного результата
-        self.delete_selected_button = tk.Button(self.simple_window, text="Удалить выбранное",
-                                                 command=self.remove_simple_selected, bg='lightgrey')
-        self.delete_selected_button.pack(pady=5, padx=20, fill=tk.X)
-        self.delete_selected_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-        # Кнопка "Закончить подсчет" для открытия календаря
-        self.finish_button = tk.Button(self.simple_window, text="Завершить подсчет",
-                                        command=self.open_simple_calendar, bg='lightgrey')
-        self.finish_button.pack(pady=5, padx=20, fill=tk.X)
-        self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-# Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
-    def add_to_simple_list(self, event):
-        # Попытка преобразовать введенные данные в число и добавление в список
-        try:
-            num_letters = int(self.quantity_entry.get())
-            if num_letters <= 0:
-                messagebox.showerror("Ошибка", "Введите корректное число!")
-                self.quantity_entry.focus_set()
-                return
-            self.numbers_entered.append(num_letters)  # Добавление числа в список
-            self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
-            self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
-        except ValueError:
-            tk.messagebox.showerror("Ошибки", "Список введенных значений пуст.")
-            self.quantity_entry.focus_set()
-
-# Если нажали кнопку удалить последний результат из списка писем.
-    def remove_simple_selected(self):
-        try:
-            # Получить индекс выбранного элемента
-            index = self.listbox.curselection()[0]
-            # Удалить этот элемент из Listbox и из списка numbers_entered
-            self.numbers_entered.pop(index)
-            self.listbox.delete(index)
-        except IndexError:
-            tk.messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
-            self.quantity_entry.focus_set()
-        except Exception as e:
-            tk.messagebox.showwarning("Ошибка", f"Произошла ошибка: {e}")
-            self.quantity_entry.focus_set()
-
-# Создание календаря с выбором даты
-    def open_simple_calendar(self):
-        if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
-            self.calendar_window.focus_set()
-            return
-        # Создание календаря
-        self.calendar_window = tk.Toplevel(self.simple_window)
-        self.calendar_window.title("Выберите дату")
-        self.calendar_window.geometry("300x280")
-
-        # Создаем метку с изображением в качестве фона
-        background_label = tk.Label(self.calendar_window, image=self.bg_image_tk)
-        background_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        screen_width = self.calendar_window.winfo_screenwidth()
-        screen_height = self.calendar_window.winfo_screenheight()
-
-        # Рассчитываем координаты для центрирования окна
-        x_coordinate = (screen_width - 300) // 2
-        y_coordinate = (screen_height - 280) // 2
-
-        # Устанавливаем положение окна по центру
-        self.calendar_window.geometry(f"300x280+{x_coordinate}+{y_coordinate}")
-
-        self.cal = Calendar(self.calendar_window, selectmode="day", year=datetime.now().year,
-                            month=datetime.now().month, day=datetime.now().day, locale='ru_RU')
-        self.cal.pack(pady=10)
-
-        # Кнопка для сохранения результатов
-        self.save_button = tk.Button(self.calendar_window, text="Сформировать список", command=self.calculate_and_save_simple_result, bg='lightgrey')
-        self.save_button.pack(pady=10, padx=20, fill=tk.X)
-        self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
-
-# Подсчет и сохранение итога по письмам
-    def calculate_and_save_simple_result(self, event=None):
-        # Ввод даты и подсчет итога
-        selected_date = self.cal.get_date()
-        selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
-        if not selected_date or not self.numbers_entered:
-            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
-            self.quantity_entry.focus_set()
-            return
-
-        try:
-            total = sum(self.numbers_entered) * self.LETTER_COST
-            self.save_to_simple_file(total, sum(self.numbers_entered), selected_date)
-
-            tk.messagebox.showinfo("Успешно", "Результаты сохранены.")
-            
-            # Закрываем окно
-            self.simple_window.destroy()
-            self.letters_window.focus_set()
-        except ValueError:
-            tk.messagebox.showerror("Ошибка", "Ошибка при сохранении результатов.")
-
-    def save_to_simple_file(self, total_result, total_letters, date):
-        custom_path = self.custom_path
-        filename = os.path.join(custom_path, f"Списки простых писем.txt")
-
-        # Используем режим 'a' для добавления данных в конец файла
-        with open(filename, 'a', encoding='utf-8') as file:
-            file.write(f"Дата: {date} Количество писем: {total_letters} Итого: {total_result} руб.\n")
 
 # Подсчет посылок
     def open_parcels_window(self):
@@ -864,31 +859,34 @@ class App(tk.Tk):
         self.finish_button.pack(pady=10, padx=20, fill=tk.X)
         self.finish_button.configure(borderwidth=2, relief=tk.GROOVE)
 
+# Добавление в листбокс
     def add_parcel_weight(self, event=None):
         try:
             # Получаем значение из виджета Entry и заменяем запятую на точку
             price_entry_text = self.parcels_price_entry.get().replace(',', '.')
             price = float(price_entry_text)
             if price <= 0:
-                messagebox.showerror("Ошибка", "Введите корректную цену.")
+                messagebox.showwarning("Внимание", "Введите корректную цену.")
                 self.parcels_price_entry.focus_set()
                 return
             self.parcels_weights_listbox.insert(tk.END, f"{price} руб.")
             self.parcels_price_entry.delete(0, tk.END)
         except ValueError as e:
-            messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            messagebox.showwarning("Внимание", "Список введенных значений пуст.")
             self.parcels_price_entry.focus_set()
         finally:
             self.parcels_price_entry.focus_set()
 
+# Удаление из листбокса
     def delete_selected_parcel(self):
         selected_index = self.parcels_weights_listbox.curselection()
         if selected_index:
             self.parcels_weights_listbox.delete(selected_index)
         else:
-            messagebox.showwarning("Предупреждение", "Выберите значение для удаления.")
+            messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.parcels_price_entry.focus_set()
 
+# Выбор даты
     def open_calendar_parcels(self):
         if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
             self.calendar_window.focus_set()
@@ -921,6 +919,7 @@ class App(tk.Tk):
         self.save_button.pack(pady=10, padx=20, fill=tk.X)
         self.save_button.configure(borderwidth=2, relief=tk.GROOVE)
 
+# Сохранение результатов
     def calculate_and_save_parcels(self):
         if not self.parcels_weights_listbox.size():
             messagebox.showerror("Ошибка", "Список введенных значений пуст.")
@@ -1705,7 +1704,7 @@ class App(tk.Tk):
         report_label.pack(pady=(10, 5))
 
         # Версия программы
-        version_label = tk.Label(self.program_info_window, text="Версия: 4.0.3", font=("Calibri", 12))
+        version_label = tk.Label(self.program_info_window, text="Версия: 4.0.4", font=("Calibri", 12))
         version_label.pack(pady=5)
 
         # Информация о разработчиках
@@ -1794,7 +1793,7 @@ class App(tk.Tk):
 
 
 def main():
-    current_version = "4.0.3"  # Текущая версия вашего приложения
+    current_version = "4.0.4"  # Текущая версия вашего приложения
     check_for_updates(current_version)
     app = App()
     app.mainloop()
