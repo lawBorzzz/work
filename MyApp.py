@@ -9,6 +9,8 @@ import subprocess
 import tempfile
 import webbrowser
 import tkinter as tk
+import os
+import logging
 
 from collections import defaultdict
 from datetime import date, datetime
@@ -23,6 +25,27 @@ from docx import Document as DocxDocument
 from docx.enum.section import WD_ORIENTATION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Cm, Pt, RGBColor
+
+# Определение пути до папки AppData\Roaming
+appdata_path = os.getenv('APPDATA')
+custom_path = os.path.join(appdata_path, 'Логи')  # Замените 'YourAppName' на имя вашего приложения
+
+# Создание папки, если она не существует
+os.makedirs(custom_path, exist_ok=True)
+
+# Определение пути к файлу логов
+log_file = os.path.join(custom_path, 'app.log')
+
+# Настройка логирования
+logging.basicConfig(filename=log_file, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Примеры использования логгера
+logging.debug("Это отладочное сообщение")
+logging.info("Это информационное сообщение")
+logging.warning("Это предупреждение")
+logging.error("Это сообщение об ошибке")
+logging.critical("Это критическая ошибка")
+
 
 
 def check_for_updates(current_version):
@@ -60,6 +83,17 @@ class App(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("Формирование отчета")
+
+        # Инициализация логгера
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        # Создание обработчика для записи в файл
+        file_handler = logging.FileHandler('app.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
 
         # Получить путь к исполняемому файлу
         executable_path = os.path.dirname(os.path.abspath(__file__))
@@ -140,6 +174,7 @@ class App(tk.Tk):
 
 # Открывается кнопка ввода веса бандеролей       
     def open_packet_window(self):
+        self.logger.info("Открытие подсчета бандеролей")
         if hasattr(self, 'packet_window') and self.packet_window.winfo_exists():
             self.packet_window.focus_set()
             return
@@ -196,6 +231,7 @@ class App(tk.Tk):
 
 # Добавление бандеролей в общий список до подсчета
     def add_weight(self, event=None):
+        self.logger.info("Был добавлен вес бандероли.")
         try:
             weight_str = self.packet_entry.get().strip()
             if not weight_str:
@@ -218,11 +254,13 @@ class App(tk.Tk):
             self.packet_entry.delete(0, tk.END)
         except ValueError as e:
             messagebox.showwarning("Внимание", str(e))
+            self.logger.warning(f"Ошибка при добавлении веса: {e}")
         finally:
             self.packet_entry.focus_set()
 
 # Удаление выбранного веса из списка   
     def delete_selected_weight(self):
+        self.logger.info("Был удален вес бандеролей")
         selection = self.packets_listbox.curselection()  # Получаем текущий выбранный элемент в listbox
         if selection:
             index = selection[0]
@@ -233,11 +271,13 @@ class App(tk.Tk):
             self.total_parcels -= 1
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.logger.warning("Небыло выбрано значение для удаления.")
         # Фокусировка после изменения
         self.packet_entry.focus_set()
 
     def finish_weight_calculation(self):
         self.open_date_window()
+        self.logger.info("Завершено подсчет бандеролей")
 
 # Расчет стоимости бандеролей, идет по настройкам с выставленными значениями.
     def calculate_cost(self, weight):
@@ -246,6 +286,7 @@ class App(tk.Tk):
 
 # Открывается поле ввода даты перед сохранением списка с бандеролями       
     def open_date_window(self):
+        self.logger.info("Выбор даты для сохранения бандеролей")
         if hasattr(self, 'date_window') and self.date_window.winfo_exists():
             self.date_window.focus_set()
             return
@@ -287,8 +328,10 @@ class App(tk.Tk):
 
 # Сохранение результата списка бандеролей с датой
     def save_results(self, event=None):
+        self.logger.info("Сохранение результатов")
         if not self.weights:
             messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.logger.error("Ошибка при попытке сохранения пустого списка")
             self.packet_entry.focus_set()
             return
     
@@ -312,9 +355,11 @@ class App(tk.Tk):
         self.total_weight = 0
         self.total_cost = 0.0
         self.total_parcels = 0
+        self.logger.info("Результаты сохранены")
 
 # Окно выбора типа письма.
     def open_letters_window(self):
+        self.logger.info("Выбор типа письма")
         if hasattr(self, 'letters_window') and self.letters_window.winfo_exists():
             self.letters_window.focus_set()
             return
@@ -365,6 +410,7 @@ class App(tk.Tk):
 
 # Отыкрывается кнопка ПРОСТЫХ писем  
     def calculate_simple_letters(self):
+        self.logger.info("Открытие простых писем")
         if hasattr(self, 'simple_window') and self.simple_window.winfo_exists():
             self.simple_window.focus_set()
             return
@@ -418,22 +464,27 @@ class App(tk.Tk):
 
 # Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
     def add_to_simple_list(self, event):
+        self.logger.info("Добавлены простые письма")
         # Попытка преобразовать введенные данные в число и добавление в список
         try:
             num_letters = int(self.quantity_entry.get())
             if num_letters <= 0:
                 messagebox.showwarning("Внимание", "Введите корректное число!")
+                self.logger.warning("Попытка ввода числа <=0 в простых письмах")
                 self.quantity_entry.focus_set()
                 return
             self.numbers_entered.append(num_letters)  # Добавление числа в список
             self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
             self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
-        except ValueError:
-            messagebox.showwarning("Внимание", "Список введенных значений пуст.")
+        except ValueError as e:
+            messagebox.showwarning("Внимание", "Введите корректное числовое значение.")
+            self.logger.warning("Попытка ввода некорректного числа")
             self.quantity_entry.focus_set()
+
 
 # Если нажали кнопку удалить последний результат из списка писем.
     def remove_simple_selected(self):
+        self.logger.info("Удалены простые письма")
         try:
             # Получить индекс выбранного элемента
             index = self.listbox.curselection()[0]
@@ -445,10 +496,12 @@ class App(tk.Tk):
             self.quantity_entry.focus_set()
         except Exception as e:
             messagebox.showwarning("Внимание", f"Произошла ошибка: {e}")
+            self.logger.warning("Не выбрано значение для удаления в простых писем")
             self.quantity_entry.focus_set()
 
 # Создание календаря с выбором даты
     def open_simple_calendar(self):
+        self.logger.info("Открывается календарь в простых писем")
         if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
             self.calendar_window.focus_set()
             return
@@ -487,6 +540,7 @@ class App(tk.Tk):
         selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
         if not selected_date or not self.numbers_entered:
             messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.logger.error("Попытка сохранения в простых письмах")
             self.quantity_entry.focus_set()
             return
 
@@ -495,12 +549,14 @@ class App(tk.Tk):
             self.save_to_simple_file(total, sum(self.numbers_entered), selected_date)
 
             messagebox.showinfo("Успешно", "Результаты сохранены.")
+            self.logger.error("Успешное сохранение результатов в простых письмах") 
             
             # Закрываем окно
             self.simple_window.destroy()
             self.letters_window.focus_set()
         except ValueError:
             messagebox.showerror("Ошибка", "Ошибка при сохранении результатов.")
+            self.logger.error("Ошибка сохранения в простых письмах")
 
     def save_to_simple_file(self, total_result, total_letters, date):
         custom_path = self.custom_path
@@ -512,6 +568,7 @@ class App(tk.Tk):
 
 # Отыкрывается кнопка ЗАКАЗНЫХ писем  
     def calculate_registered_letters(self):
+        self.logger.info("Открытие заказных писем")
         if hasattr(self, 'registered_window') and self.registered_window.winfo_exists():
             self.registered_window.focus_set()
             return
@@ -565,22 +622,27 @@ class App(tk.Tk):
 
 # Добавление значений в листбокс   
     def add_to_list_reg(self, event):
+        self.logger.info("Добавлены заказные письма")
         # Попытка преобразовать введенные данные в число и добавление в список
         try:
             num_letters = int(self.quantity_entry.get())
             if num_letters <= 0:
                 messagebox.showwarning("Внимание", "Введите корректное число!")
+                self.logger.warning("Ввод некорректного числа в заказных письмах.")
                 self.quantity_entry.focus_set()
                 return
             self.numbers_entered_reg.append(num_letters)  # Добавление числа в список
             self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
             self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
-        except ValueError:
-            messagebox.showwarning("Внимание", "Список введенных значений пуст.")
+        except ValueError as e:
+            messagebox.showwarning("Внимание", "Введите корректное числовое значение.")
+            self.logger.warning("Попытка ввода некорректного числа")
             self.quantity_entry.focus_set()
+
 
 # Если нажали кнопку удалить последний результат из списка писем.
     def remove_selected_reg(self):
+        self.logger.info("Удаление заказных писем")
         try:
             # Получить индекс выбранного элемента
             index = self.listbox.curselection()[0]
@@ -589,6 +651,7 @@ class App(tk.Tk):
             self.listbox.delete(index)
         except IndexError:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.logger.warning("Попытка удаления пустого значения в заказных письмах.")
             self.quantity_entry.focus_set()
         except Exception as e:
             messagebox.showwarning("Внимание", f"Произошла ошибка: {e}")
@@ -596,6 +659,7 @@ class App(tk.Tk):
 
 # Создание календаря
     def open_calendar_reg(self):
+        self.logger.info("Открытие календаря заказных писем")
         if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
             self.calendar_window.focus_set()
             return
@@ -633,6 +697,7 @@ class App(tk.Tk):
         selected_date = re.sub(r'[\s\\\/.,]', '.', selected_date)
         if not selected_date or not self.numbers_entered_reg:
             messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.logger.warning("Попытка сохранения пустого списка заказных писем")
             self.quantity_entry.focus_set()
             return
 
@@ -642,6 +707,7 @@ class App(tk.Tk):
 
         # Отображение результата
         messagebox.showinfo("Успешно", "Результаты сохранены.")
+        self.logger.info("Успешное сохранение заказных писем")
     
         # Закрытие окна ввода
         self.registered_window.destroy()
@@ -657,6 +723,7 @@ class App(tk.Tk):
 
 # Открывается подсчет иностранных писем
     def calculate_foreign_letters(self):
+        self.logger.info("Открытие иностранных писем")
         if hasattr(self, 'foreign_window') and self.foreign_window.winfo_exists():
             self.foreign_window.focus_set()
             return
@@ -711,34 +778,32 @@ class App(tk.Tk):
 
 # добавляем в листбокс
     def add_to_foreign_list(self, event=None):
+        self.logger.info("Добавление иностранного письма")
         try:
             price = self.price_entry.get().replace(',', '.')  # Заменяем запятую на точку
             if not price:
                 raise ValueError("Пожалуйста, введите цену.")
-            self.price_entry.focus_set()
 
             # Преобразуем строку в число
             price_float = float(price)
 
             if price_float <= 0:
                 raise ValueError("Введите положительное числовое значение.")
-            self.price_entry.focus_set()
-
-            # Проверяем, что ввод содержит только цифры и точку
-            if not re.match(r'^\d*\.?\d*$', price):
-                raise ValueError("Введите корректное числовое значение.")
-            self.price_entry.focus_set()
 
             self.prices_entered.append(price_float)
             self.listbox.insert(tk.END, f"{price_float} руб.")
             self.price_entry.delete(0, tk.END)
         except ValueError as e:
-            messagebox.showwarning("Внимание", str(e))
+            # Если произошла ошибка преобразования, сообщаем пользователю
+            messagebox.showwarning("Внимание", "Введите корректное числовое значение.")
+            # Записываем сообщение об ошибке в лог
+            self.logger.warning("Попытка ввода некорректного числа")
         finally:
             self.price_entry.focus_set()
 
 # Удаляем из листбокс
     def remove_foreign_selected(self):
+        self.logger.info("Удаление значения из иностранных писем")
         selected_indices = self.listbox.curselection()
         if selected_indices:
             selected_index = selected_indices[0]
@@ -746,10 +811,12 @@ class App(tk.Tk):
             del self.prices_entered[selected_index]
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.logger.warning("Попытка удаления пустого значения.")
             self.price_entry.focus_set()
 
 # Открываем календарь
     def open_foreign_calendar(self):
+        self.logger.info("Открытие календаря для выбора даты перед сохранением в иностранных письмах.")
         if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
             self.calendar_window.focus_set()
             return
@@ -786,6 +853,7 @@ class App(tk.Tk):
     def save_foreign_date(self):
         if not self.prices_entered:
             messagebox.showerror("Ошибка", "Список введенных цен пуст.")
+            self.logger.warning("Попытка сохранения пустого списка иностранных писем")
             self.price_entry.focus_set()
             return
         
@@ -793,6 +861,7 @@ class App(tk.Tk):
         self.save_to_foreign_file(selected_date)
         self.calendar_window.destroy()
         messagebox.showinfo("Успешно", "Данные сохранены в файл.")
+        self.logger.info("Данные по иностранным письмам сохранены")
 
         # Закрываем окно
         self.foreign_window.destroy()
@@ -807,6 +876,7 @@ class App(tk.Tk):
 
 # Подсчет посылок
     def open_parcels_window(self):
+        self.logger.info("Открытие подсчета посылок.")
         if hasattr(self, 'parcels_window') and self.parcels_window.winfo_exists():
             self.parcels_window.focus_set()
             return
@@ -861,33 +931,39 @@ class App(tk.Tk):
 
 # Добавление в листбокс
     def add_parcel_weight(self, event=None):
+        self.logger.info("Была добавлена посылка")
         try:
             # Получаем значение из виджета Entry и заменяем запятую на точку
             price_entry_text = self.parcels_price_entry.get().replace(',', '.')
             price = float(price_entry_text)
             if price <= 0:
                 messagebox.showwarning("Внимание", "Введите корректную цену.")
+                self.logger.warning("Попытка добавления значения <=0 в посылках")
                 self.parcels_price_entry.focus_set()
                 return
             self.parcels_weights_listbox.insert(tk.END, f"{price} руб.")
             self.parcels_price_entry.delete(0, tk.END)
         except ValueError as e:
             messagebox.showwarning("Внимание", "Список введенных значений пуст.")
+            self.logger.warning("Попытка добавления пустого значения посылки")
             self.parcels_price_entry.focus_set()
         finally:
             self.parcels_price_entry.focus_set()
 
 # Удаление из листбокса
     def delete_selected_parcel(self):
+        self.logger.info("Была удалена посылка")
         selected_index = self.parcels_weights_listbox.curselection()
         if selected_index:
             self.parcels_weights_listbox.delete(selected_index)
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
+            self.logger.warning("Попытка удаления пустого значения")
             self.parcels_price_entry.focus_set()
 
 # Выбор даты
     def open_calendar_parcels(self):
+        self.logger.info("Открытие календаря для сохранения посылок")
         if hasattr(self, 'calendar_window') and self.calendar_window.winfo_exists():
             self.calendar_window.focus_set()
             return
@@ -923,6 +999,7 @@ class App(tk.Tk):
     def calculate_and_save_parcels(self):
         if not self.parcels_weights_listbox.size():
             messagebox.showerror("Ошибка", "Список введенных значений пуст.")
+            self.logger.warning("Попытка сохранения пустого списка посылок")
             self.parcels_price_entry.focus_set()
             return
         
@@ -946,10 +1023,12 @@ class App(tk.Tk):
             file.write(result_string)
 
         messagebox.showinfo("Успешно", "Результаты сохранены.")
+        self.logger.info("Успешное сохранения списка посылок")
         self.parcels_window.destroy()
 
 # Функция для создания диалогового окна по общему подсчету и ввода даты
     def ask_month_input(self):
+        self.logger.info("Открыт общий подсчет за месяц")
         if hasattr(self, 'month_window') and self.month_window.winfo_exists():
             self.month_window.focus_set()
             return
@@ -1110,6 +1189,7 @@ class App(tk.Tk):
 
 # Кнопка создания обложки
     def open_cover_window(self):
+        self.logger.info("Открыт выбор создания обложки")
         if hasattr(self, 'cover_window') and self.cover_window.winfo_exists():
             self.cover_window.focus_set()
             return
@@ -1171,6 +1251,7 @@ class App(tk.Tk):
 
 # Обложка на почту
     def open_post(self):
+        self.logger.info("Создание обложки на почту")
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.focus_set()
             return
@@ -1242,6 +1323,7 @@ class App(tk.Tk):
 
 # Обложка на посылки
     def open_pacage(self):
+        self.logger.info("Создание обложки на посылки")
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.focus_set()
             return
@@ -1350,6 +1432,7 @@ class App(tk.Tk):
 
     # Обложка на документы
     def open_documents(self):
+        self.logger.info("Создание обложки на документы")
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.focus_set()
             return
@@ -1430,6 +1513,7 @@ class App(tk.Tk):
 
     # Обложка на апелляционные жалобы
     def open_complaints(self):
+        self.logger.info("Создание обложки на жалобы")
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.focus_set()
             return
@@ -1509,6 +1593,7 @@ class App(tk.Tk):
 
 # Обложка на накладные
     def open_invoice(self):
+        self.logger.info("Создание обложки на накладные")
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.focus_set()
             return
@@ -1588,6 +1673,7 @@ class App(tk.Tk):
 
 # Открывается кнопка Настроек
     def open_settings_window(self):
+        self.logger.info("Были открыты настройки")
         if hasattr(self, 'settings_window') and self.settings_window.winfo_exists():
             self.settings_window.focus_set()
             return
