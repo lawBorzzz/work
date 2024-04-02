@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import webbrowser
 import tkinter as tk
+import os
 import logging
 
 from collections import defaultdict
@@ -38,27 +39,21 @@ log_file = os.path.join(custom_path, 'Логи.log')
 # Настройка логирования
 logging.basicConfig(filename=log_file, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Примеры использования логгера
-logging.debug("Это отладочное сообщение")
-logging.info("Это информационное сообщение")
-logging.warning("Это предупреждение")
-logging.error("Это сообщение об ошибке")
-logging.critical("Это критическая ошибка")
-
-
-
 def check_for_updates(current_version):
     try:
         response = requests.get('https://raw.githubusercontent.com/lawBorzzz/work/main/version.txt')
         response.raise_for_status()
         latest_version = response.text.strip()
         print("Получена версия из GitHub:", latest_version)
+        logging.info("Получена версия из GitHub: %s", latest_version)  # Используйте форматирование строк для передачи значения latest_version
     except requests.exceptions.RequestException as e:
         print("Ошибка при проверке обновлений:", e)
+        logging.error("Ошибка при проверке обновлений: %s", e)  # Используйте форматирование строк для передачи значения e
         return
 
     if latest_version != current_version:
         print("Доступна новая версия:", latest_version)
+        logging.info("Доступна новая версия: %s", latest_version)  # Используйте форматирование строк для передачи значения latest_version
         # Открываем диалоговое окно с предложением обновления
         root = tk.Tk()
         root.withdraw()  # Скрыть основное окно
@@ -69,6 +64,7 @@ def check_for_updates(current_version):
         root.destroy()
     else:
         print("У вас последняя версия приложения.")
+        logging.info("У вас последняя версия приложения.")
 
 class App(tk.Tk):
     BASE_COST = 89.5  # базовая стоимость бандероли
@@ -1073,6 +1069,25 @@ class App(tk.Tk):
         try:
             custom_path = self.custom_path
             month, year = map(int, selected_month.split("."))
+
+            month_name = calendar.month_name[month]
+            month_name_ru = {
+                'January': 'Январь',
+                'February': 'Февраль',
+                'March': 'Март',
+                'April': 'Апрель',
+                'May': 'Май',
+                'June': 'Июнь',
+                'July': 'Июль',
+                'August': 'Август',
+                'September': 'Сентябрь',
+                'October': 'Октябрь',
+                'November': 'Ноябрь',
+                'December': 'Декабрь'
+            }
+
+            month_name = month_name_ru.get(month_name, month_name)
+            month_year_name = f"{month_name} {year}"
         
             # Инициализация переменных для подсчета итогов
             total_weight = 0
@@ -1159,19 +1174,19 @@ class App(tk.Tk):
             total_cost_with_vat_package = round(total_cost_with_vat_package, 2)
 
             # Строка результата расчета
-            result_string = (f"Итого за {selected_month}:\n"
+            result_string = (f"Итого за {month_name} {year}:\n"
                              f"Отправлено бандеролей: {total_parcels} "
                              f"весом {total_weight} грамм на сумму {total_cost} руб.\n"
                              f"Отправлено простых писем: {total_simple_letters} на сумму {total_letters_cost} руб.\n"
                              f"Отправлено заказных писем: {total_registered_letters} на сумму {total_registered_letters_cost} руб.\n"
                              f"Отправлено иностранных писем:\n{foreign_letters_string}\n"
                              f"Отправлено посылок: {total_parcels_package} на сумму {total_cost_package} руб. (без НДС) и {total_cost_with_vat_package} руб. (с НДС)\n")
-        
+            
             # Показываем результат в message box
             messagebox.showinfo("Итоги за месяц", result_string)
-        
+            
             # Сохранение в файл
-            output_file_path = os.path.join(custom_path, f"Отчет за {selected_month}.txt")
+            output_file_path = os.path.join(custom_path, f"Отчет за {month_year_name}.txt")
             with open(output_file_path, 'w', encoding='utf-8') as output_file:
                 output_file.write(result_string)
     
