@@ -9,7 +9,6 @@ import subprocess
 import tempfile
 import webbrowser
 import tkinter as tk
-import os
 import logging
 
 from collections import defaultdict
@@ -28,13 +27,13 @@ from docx.shared import Inches, Cm, Pt, RGBColor
 
 # Определение пути до папки AppData\Roaming
 appdata_path = os.getenv('APPDATA')
-custom_path = os.path.join(appdata_path, 'Логи')  # Замените 'YourAppName' на имя вашего приложения
+custom_path = os.path.join(appdata_path, 'Формирование отчета')  # Замените 'YourAppName' на имя вашего приложения
 
 # Создание папки, если она не существует
 os.makedirs(custom_path, exist_ok=True)
 
 # Определение пути к файлу логов
-log_file = os.path.join(custom_path, 'app.log')
+log_file = os.path.join(custom_path, 'Логи.log')
 
 # Настройка логирования
 logging.basicConfig(filename=log_file, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -88,12 +87,6 @@ class App(tk.Tk):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-        # Создание обработчика для записи в файл
-        file_handler = logging.FileHandler('app.log')
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
 
         # Получить путь к исполняемому файлу
         executable_path = os.path.dirname(os.path.abspath(__file__))
