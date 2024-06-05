@@ -1,43 +1,52 @@
-﻿import tkinter as tk
+import tkinter as tk
 from tkinter import Scrollbar, filedialog, messagebox
+from tkinter import ttk
 import configparser
 import os
-from typing import Self
 import pandas as pd
 import openpyxl
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-
 
 class MailRegistryApp:
     def __init__(self, master):
         self.master = master
         self.master.title("Менеджер писем")
-        self.master.geometry("400x150")  # Устанавливаем размер окна
-        self.center_window()  # Центрируем окно по горизонтали и вертикали
+        self.master.geometry("600x270")  # Устанавливаем размер окна
+        self.center_window(self.master)  # Центрируем окно по горизонтали и вертикали
 
-        # Определяем путь к файлу конфигурации
-        config_dir = os.path.join(os.getenv('APPDATA'), 'MailRegistryApp')
-        config_file = os.path.join(config_dir, 'config.ini')
+        # Настройка стилей
+        self.style = ttk.Style()
+        self.style.configure('TButton', font=('Arial', 12), padding=10)
+        self.style.configure('TLabel', font=('Arial', 12))
 
-        # Создаем директорию для файла конфигурации, если ее нет
-        os.makedirs(config_dir, exist_ok=True)
-
-        # Создаем файл конфигурации, если он отсутствует
-        if not os.path.exists(config_file):
-            with open(config_file, 'w'):
-                pass
-        
         # Путь к файлу базы данных
         self.registry_path = ""
 
-        # Кнопки
-        self.btn_create_registry = tk.Button(master, text="  Реестр писем", command=self.create_registry)
-        self.btn_create_registry.pack(pady=10)
+        # Создаем основной фрейм
+        main_frame = ttk.Frame(master)
+        main_frame.pack(expand=True)
 
-        self.btn_settings = tk.Button(master, text="    Настройки    ", command=self.open_settings)
-        self.btn_settings.pack(pady=10)
+        # Заголовок
+        #title = ttk.Label(main_frame, text="Менеджер писем", font=('Arial', 18, 'bold'))
+        #title.pack(pady=20)
+
+        # Фрейм для кнопок
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+
+        # Кнопки
+        self.btn_create_registry = ttk.Button(button_frame, text="Создать реестр отправлений", command=self.create_registry)
+        self.btn_create_registry.pack(pady=10, ipadx=10)
+
+        self.btn_settings = ttk.Button(button_frame, text="Настройки", command=self.open_settings)
+        self.btn_settings.pack(pady=10, ipadx=10)
+
+        # Надпись "by.Borzzz" в нижнем правом углу
+        by_label = ttk.Label(master, text="by.Borzzz", foreground="gray")
+        by_label.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        # Надпись "Для макса" в нижнем правом углу
+        by_label = ttk.Label(master, text="Разработано для Паринова М.И.", foreground="gray")
+        by_label.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Инициализация файла конфигурации
         self.config = configparser.ConfigParser()
@@ -47,24 +56,24 @@ class MailRegistryApp:
             if 'Paths' in self.config:
                 self.registry_path = self.config['Paths'].get('registry', '')
 
-    def center_window(self):
+    def center_window(self, window):
         # Получаем размеры экрана
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
 
         # Получаем размеры окна
-        window_width = self.master.winfo_reqwidth()
-        window_height = self.master.winfo_reqheight()
+        window.update_idletasks()  # Обновляем информацию о размере окна
+        window_width = window.winfo_width()
+        window_height = window.winfo_height()
 
         # Вычисляем координаты для размещения окна по центру экрана
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
 
         # Устанавливаем положение окна
-        self.master.geometry("+{}+{}".format(x, y))
+        window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def create_registry(self):
-        self.center_window()  # Центрируем окно по горизонтали и вертикали
         if not self.registry_path:
             print("Сначала выберите файл базы данных реестра через настройки")
             messagebox.showwarning("Внимание", "Сначала выберите файл базы данных реестра через настройки.")
@@ -72,7 +81,11 @@ class MailRegistryApp:
 
         # Чтение данных из файла
         try:
-            df = pd.read_excel(self.registry_path)  # Поддерживаем различные форматы Excel
+            if self.registry_path.endswith('.xls'):
+                df = pd.read_excel(self.registry_path, engine='xlrd')
+            else:
+                df = pd.read_excel(self.registry_path)  # Поддерживаем различные форматы Excel
+            
             adresat_column = df['ADRESAT']  # Выбираем столбец с именами
             adresat_values = adresat_column.tolist()  # Преобразуем в список
 
@@ -80,34 +93,82 @@ class MailRegistryApp:
             self.select_names_window(adresat_values)
         except Exception as e:
             print("Ошибка чтения файла реестра писем:", e)
+            messagebox.showerror("Ошибка", f"Ошибка чтения файла реестра писем: {e}")
 
     def select_names_window(self, adresat_values):
         # Создаем новое окно для выбора имен
         select_names_window = tk.Toplevel(self.master)
-        select_names_window.title("Выбор имен")
-        select_names_window.geometry("600x600")
+        select_names_window.geometry("600x800")
+        self.center_window(select_names_window)  # Центрируем окно выбора имен
+
+        # Создаем фреймы для структурирования интерфейса
+        frame_top = ttk.Frame(select_names_window, padding="10")
+        frame_top.pack(fill=tk.BOTH, expand=True)
+
+        frame_bottom = ttk.Frame(select_names_window, padding="10")
+        frame_bottom.pack(fill=tk.BOTH, expand=True)
+
+        # Заголовок окна выбора имен
+        label = ttk.Label(frame_top, text="Выберите имена из списка", font=('Arial', 14, 'bold'))
+        label.pack(pady=10)
 
         # Сортируем имена в алфавитном порядке
         adresat_values.sort()
 
         # Создаем список имен с прокруткой
-        lb_names = tk.Listbox(select_names_window, selectmode=tk.MULTIPLE, width=50, height=20)
+        lb_names = tk.Listbox(frame_top, selectmode=tk.MULTIPLE, width=50, height=20)
         for name in adresat_values:
             lb_names.insert(tk.END, name)
         lb_names.pack(pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Создаем и настраиваем скроллбар
-        scrollbar = Scrollbar(select_names_window, orient=tk.VERTICAL, command=lb_names.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        lb_names.config(yscrollcommand=scrollbar.set)
+        # Создаем и настраиваем скроллбар для списка имен
+        scrollbar_names = Scrollbar(frame_top, orient=tk.VERTICAL, command=lb_names.yview)
+        scrollbar_names.pack(side=tk.LEFT, fill=tk.Y)
+        lb_names.config(yscrollcommand=scrollbar_names.set)
+
+        # Создаем окно для отображения выбранных имен с прокруткой
+        selected_names_listbox = tk.Listbox(frame_bottom, width=50, height=10, state='disabled')
+        selected_names_listbox.pack(pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar_selected = Scrollbar(frame_bottom, orient=tk.VERTICAL, command=selected_names_listbox.yview)
+        scrollbar_selected.pack(side=tk.LEFT, fill=tk.Y)
+        selected_names_listbox.config(yscrollcommand=scrollbar_selected.set)
+
+        # Счетчик количества выбранных имен
+        self.selected_count_var = tk.StringVar()
+        self.selected_count_var.set("Выбрано: 0")
+        label_selected_count = ttk.Label(frame_bottom, textvariable=self.selected_count_var, font=('Arial', 12))
+        label_selected_count.pack(pady=5)
 
         # Кнопка для создания списка писем
-        btn_create_list = tk.Button(select_names_window, text="Создать список писем", command=lambda: self.create_email_list_from_selected(lb_names), bg="blue", fg="white", width=20)
-        btn_create_list.pack(pady=10)
+        btn_create_list = ttk.Button(frame_bottom, text="Создать реестр писем", command=lambda: self.create_email_list_from_selected(lb_names))
+        btn_create_list.pack(pady=5, ipadx=10)
+
+        # Кнопка для очистки списка
+        btn_clear_list = ttk.Button(frame_bottom, text="Очистить список", command=lambda: self.clear_selected_names(lb_names, selected_names_listbox))
+        btn_clear_list.pack(pady=5, ipadx=10)
 
         # Кнопка для выхода из программы
-        btn_exit = tk.Button(select_names_window, text="Выход", command=select_names_window.destroy, bg="red", fg="white", width=20, height=1)
-        btn_exit.pack(pady=10)
+        btn_exit = ttk.Button(frame_bottom, text="Выход", command=self.master.quit)
+        btn_exit.pack(pady=5, ipadx=10)
+
+        # Обновление окна выбранных имен при изменении выбора в lb_names
+        def update_selected_names_listbox(event):
+            selected_names_listbox.config(state='normal')
+            selected_names_listbox.delete(0, tk.END)
+            selected_indices = lb_names.curselection()
+            for idx in selected_indices:
+                selected_names_listbox.insert(tk.END, lb_names.get(idx))
+            selected_names_listbox.config(state='disabled')
+            self.selected_count_var.set(f"Выбрано: {len(selected_indices)}")
+
+        lb_names.bind('<<ListboxSelect>>', update_selected_names_listbox)
+
+
+    def clear_selected_names(self, lb_names, selected_names_listbox):
+        lb_names.selection_clear(0, tk.END)
+        selected_names_listbox.delete(0, tk.END)
+        self.selected_count_var.set("Выбрано: 0")
 
     def create_email_list_from_selected(self, lb_names):
         # Получаем выбранные имена
@@ -134,7 +195,6 @@ class MailRegistryApp:
                 print("Список писем успешно создан и сохранен в файле:", output_path)
         except Exception as e:
             print("Ошибка при создании списка писем:", e)
-
 
     def create_excel_file(self, selected_data, selected_names, output_path):
         # Создаем новый документ Excel
@@ -177,12 +237,12 @@ class MailRegistryApp:
         # Сохраняем документ
         wb.save(output_path)
 
-
     def open_settings(self):
         # Создаем новое окно настроек
         settings_window = tk.Toplevel(self.master)
         settings_window.title("Настройки")
-        
+        settings_window.geometry("400x250")
+
         # Поля для путей к базам данных
         registry_path_var = tk.StringVar()
 
@@ -209,24 +269,25 @@ class MailRegistryApp:
             with open(self.config_file, 'w') as configfile:
                 self.config.write(configfile)
             settings_window.destroy()  # Закрываем окно настроек после сохранения
-            # Сохраняем путь при выборе файла
-            if self.registry_path:
-                self.config['Paths'] = {'registry': self.registry_path}
-                with open(self.config_file, 'w') as configfile:
-                    self.config.write(configfile)
-                settings_window.destroy()  # Закрываем окно настроек после сохранения
 
-        # Кнопки выбора пути к базам данных
-        btn_registry_path = tk.Button(settings_window, text="Выбрать файл базы данных реестра", command=choose_registry_path)
-        btn_registry_path.pack(pady=10)
+        # Виджеты настроек
+        frame_settings = ttk.Frame(settings_window, padding="10")
+        frame_settings.pack(fill=tk.BOTH, expand=True)
 
-        entry_registry_path = tk.Entry(settings_window, textvariable=registry_path_var, state='readonly', width=50)
+        label_registry_path = ttk.Label(frame_settings, text="Путь к файлу БД:", font=('Arial', 12))
+        label_registry_path.pack(pady=5)
+
+        entry_registry_path = ttk.Entry(frame_settings, textvariable=registry_path_var, state='readonly', width=50)
         entry_registry_path.pack(pady=5)
 
+        btn_registry_path = ttk.Button(frame_settings, text="Выбрать файл", command=choose_registry_path)
+        btn_registry_path.pack(pady=5, ipadx=10)
 
-        # Кнопка "Сохранить"
-        btn_save = tk.Button(settings_window, text="Сохранить", command=save_paths)
-        btn_save.pack(pady=10)
+        btn_save = ttk.Button(frame_settings, text="Сохранить", command=save_paths)
+        btn_save.pack(pady=10, ipadx=10)
+
+        by_label = ttk.Label(frame_settings, text="Версия: 1.3", foreground="gray")
+        by_label.pack(side=tk.RIGHT, padx=10, pady=10)
 
         # Устанавливаем начальные значения в полях
         entry_registry_path.insert(0, registry_path_var.get())
