@@ -220,7 +220,7 @@ class App(tk.Tk):
 
 # Добавление бандеролей в общий список до подсчета
     def add_weight(self, event=None):
-        self.logger.info("Был добавлен вес бандероли.")
+        self.logger.info("Был добавлен вес -" + self.packet_entry.get().strip())
         try:
             weight_str = self.packet_entry.get().strip()
             if not weight_str:
@@ -258,6 +258,7 @@ class App(tk.Tk):
             self.total_cost -= self.calculate_cost(weight_to_remove)
             self.packets_listbox.delete(index)  # Удалить элемент из listbox
             self.total_parcels -= 1
+            self.logger.info(f"Удален вес: {weight_to_remove}")
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.logger.warning("Небыло выбрано значение для удаления.")
@@ -453,7 +454,7 @@ class App(tk.Tk):
 
 # Это лист, где отображаются введенные письма (как в памяти так и в окне в виде списка)    
     def add_to_simple_list(self, event):
-        self.logger.info("Добавлены простые письма")
+        self.logger.info("Добавлены простые письма -" + self.quantity_entry.get())
         # Попытка преобразовать введенные данные в число и добавление в список
         try:
             num_letters = int(self.quantity_entry.get())
@@ -471,15 +472,19 @@ class App(tk.Tk):
             self.quantity_entry.focus_set()
 
 
-# Если нажали кнопку удалить последний результат из списка писем.
+# Если нажали кнопку удалить выбранное из списка простых писем.
     def remove_simple_selected(self):
         self.logger.info("Удалены простые письма")
         try:
             # Получить индекс выбранного элемента
             index = self.listbox.curselection()[0]
+            # Получить значение выбранного элемента
+            removed_value = self.numbers_entered[index]
             # Удалить этот элемент из Listbox и из списка numbers_entered
             self.numbers_entered.pop(index)
             self.listbox.delete(index)
+            # Логирование удаленного значения
+            self.logger.info(f"Удалено письмо: {removed_value}")
         except IndexError:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.quantity_entry.focus_set()
@@ -611,7 +616,7 @@ class App(tk.Tk):
 
 # Добавление значений в листбокс   
     def add_to_list_reg(self, event):
-        self.logger.info("Добавлены заказные письма")
+        self.logger.info("Добавлены письма - " + self.quantity_entry.get())
         # Попытка преобразовать введенные данные в число и добавление в список
         try:
             num_letters = int(self.quantity_entry.get())
@@ -620,6 +625,13 @@ class App(tk.Tk):
                 self.logger.warning("Ввод некорректного числа в заказных письмах.")
                 self.quantity_entry.focus_set()
                 return
+            
+            if num_letters > 33:
+                messagebox.showwarning("Внимание", "Введите число меньше 33!")
+                self.logger.warning("Ввод числа больше 33!")
+                self.quantity_entry.focus_set()
+                return
+
             self.numbers_entered_reg.append(num_letters)  # Добавление числа в список
             self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
             self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
@@ -635,9 +647,13 @@ class App(tk.Tk):
         try:
             # Получить индекс выбранного элемента
             index = self.listbox.curselection()[0]
+            # Получить значение выбранного элемента
+            removed_value = self.numbers_entered_reg[index]
             # Удалить этот элемент из Listbox и из списка numbers_entered
             self.numbers_entered_reg.pop(index)
             self.listbox.delete(index)
+            # Логирование удаленного значения
+            self.logger.info(f"Удалено письмо: {removed_value}")
         except IndexError:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.logger.warning("Попытка удаления пустого значения в заказных письмах.")
@@ -767,7 +783,7 @@ class App(tk.Tk):
 
 # добавляем в листбокс
     def add_to_foreign_list(self, event=None):
-        self.logger.info("Добавление иностранного письма")
+        self.logger.info("Добавление иностранного письма - " + self.price_entry.get())
         try:
             price = self.price_entry.get().replace(',', '.')  # Заменяем запятую на точку
             if not price:
@@ -796,8 +812,10 @@ class App(tk.Tk):
         selected_indices = self.listbox.curselection()
         if selected_indices:
             selected_index = selected_indices[0]
+            removed_value = self.price_entered[selected_index]
             self.listbox.delete(selected_index)
             del self.prices_entered[selected_index]
+            self.logger.info(f"Удалено иностранное письмо: {removed_value}")
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.logger.warning("Попытка удаления пустого значения.")
@@ -920,7 +938,7 @@ class App(tk.Tk):
 
 # Добавление в листбокс
     def add_parcel_weight(self, event=None):
-        self.logger.info("Была добавлена посылка")
+        self.logger.info("Была добавлена посылка - " + self.parcels_price_entry.get())
         try:
             # Получаем значение из виджета Entry и заменяем запятую на точку
             price_entry_text = self.parcels_price_entry.get().replace(',', '.')
@@ -944,7 +962,11 @@ class App(tk.Tk):
         self.logger.info("Была удалена посылка")
         selected_index = self.parcels_weights_listbox.curselection()
         if selected_index:
-            self.parcels_weights_listbox.delete(selected_index)
+            index = selected_index[0]
+            removed_value = self.parcels_weights[index]
+            self.parcels_weights_listbox.delete(index)
+            # Логирование удаленного веса посылки
+            self.logger.info(f"Удален вес посылки: {removed_value}")
         else:
             messagebox.showwarning("Внимание", "Выберите значение для удаления.")
             self.logger.warning("Попытка удаления пустого значения")
@@ -1043,7 +1065,7 @@ class App(tk.Tk):
         label = tk.Label(self.month_window, text=label_text)
         label.pack(pady=(10, 0))
         
-        self.month_calendar = Calendar(self.month_window, selectmode='day', year=2024, month=2, date_pattern='dd.mm.yyyy', locale='ru_RU')
+        self.month_calendar = Calendar(self.month_window, selectmode='day', date_pattern='dd.mm.yyyy', locale='ru_RU')
 
         self.month_calendar.pack(pady=10)
 
@@ -1088,6 +1110,9 @@ class App(tk.Tk):
 
             month_name = month_name_ru.get(month_name, month_name)
             month_year_name = f"{month_name} {year}"
+
+            # Выводим выбранную дату в логи
+            self.logger.info(f"Выбранная дата для подсчета итогов: {month_year_name}")
         
             # Инициализация переменных для подсчета итогов
             total_weight = 0
@@ -1787,7 +1812,7 @@ class App(tk.Tk):
         self.program_info_window.geometry("350x250+{}+{}".format(
             (self.winfo_screenwidth() - 350) // 2,
             (self.winfo_screenheight() - 250) // 2
-        ))
+        )) 
         
         # Создаем метку с отступом сверху
         top_spacing = tk.Label(self.program_info_window, text="", font=("Helvetica", 2))
