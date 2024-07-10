@@ -1827,7 +1827,7 @@ class App(tk.Tk):
         report_label.pack(pady=(10, 5))
 
         # Версия программы
-        version_label = tk.Label(self.program_info_window, text="Версия: 4.0.5", font=("Calibri", 12))
+        version_label = tk.Label(self.program_info_window, text="Версия: 4.1.0", font=("Calibri", 12))
         version_label.pack(pady=5)
 
         # Информация о разработчиках
