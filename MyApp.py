@@ -67,7 +67,7 @@ def check_for_updates(current_version):
         logging.info("У вас последняя версия приложения.")
 
 class App(tk.Tk):
-    BASE_COST = 89.5  # базовая стоимость бандероли
+    BASE_COST = 90.0  # базовая стоимость бандероли
     STEP_COST = 3.5   # стоимость за шаг в 20 грамм
     LETTER_COST = 29.0  # стоимость письма простого
     REGISTERED_LETTER_COST = 67.0 # стоимость письма заказного
@@ -240,6 +240,7 @@ class App(tk.Tk):
             self.total_parcels += 1
             self.total_cost += self.calculate_cost(rounded_weight)  # Рассчитываем стоимость по округленному весу
             self.packets_listbox.insert(tk.END, f"{rounded_weight} грамм")
+            self.packets_listbox.yview(tk.END)  # Прокрутка к последнему добавленному элементу
             self.packet_entry.delete(0, tk.END)
         except ValueError as e:
             messagebox.showwarning("Внимание", str(e))
@@ -465,6 +466,7 @@ class App(tk.Tk):
                 return
             self.numbers_entered.append(num_letters)  # Добавление числа в список
             self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
+            self.listbox.yview(tk.END)  # Прокрутка к последнему добавленному элементу
             self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
         except ValueError as e:
             messagebox.showwarning("Внимание", "Введите корректное числовое значение.")
@@ -634,6 +636,7 @@ class App(tk.Tk):
 
             self.numbers_entered_reg.append(num_letters)  # Добавление числа в список
             self.listbox.insert(tk.END, num_letters)  # Вывод числа в интерфейсе
+            self.listbox.yview(tk.END)  # Прокрутка к последнему добавленному элементу
             self.quantity_entry.delete(0, tk.END)  # Очистка поля ввода
         except ValueError as e:
             messagebox.showwarning("Внимание", "Введите корректное числовое значение.")
@@ -812,7 +815,7 @@ class App(tk.Tk):
         selected_indices = self.listbox.curselection()
         if selected_indices:
             selected_index = selected_indices[0]
-            removed_value = self.price_entered[selected_index]
+            removed_value = self.prices_entered[selected_index]
             self.listbox.delete(selected_index)
             del self.prices_entered[selected_index]
             self.logger.info(f"Удалено иностранное письмо: {removed_value}")
@@ -963,8 +966,9 @@ class App(tk.Tk):
         selected_index = self.parcels_weights_listbox.curselection()
         if selected_index:
             index = selected_index[0]
-            removed_value = self.parcels_weights[index]
+            removed_value = self.parcels_weights[index]  # Получение веса посылки по индексу
             self.parcels_weights_listbox.delete(index)
+            del self.parcels_weights[index]  # Удаление веса из списка
             # Логирование удаленного веса посылки
             self.logger.info(f"Удален вес посылки: {removed_value}")
         else:
@@ -1866,6 +1870,7 @@ class App(tk.Tk):
             self.BASE_COST = float(self.base_cost_entry.get())
             self.STEP_COST = float(self.step_cost_entry.get())
             self.LETTER_COST = float(self.letter_cost_entry.get())
+            self.REGISTERED_LETTER_COST = float(self.registered_letter_cost_entry.get())
             self.NDS = float(self.nds_entry.get())
             self.custom_path = self.custom_path_entry.get()
             self.save_settings_to_file()  # вызов метода для сохранения всех настроек, включая путь
@@ -1912,7 +1917,7 @@ class App(tk.Tk):
 
 
 def main():
-    current_version = "4.0.6"  # Текущая версия вашего приложения
+    current_version = "4.1.0"  # Текущая версия вашего приложения
     check_for_updates(current_version)
     app = App()
     app.mainloop()
